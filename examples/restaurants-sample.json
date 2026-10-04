@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "restaurants": [
+    { "name": "架空そば店 こもれび", "address": "架空市1丁目", "phone": "+81 00 0000 0000", "genre": "和食", "tags": ["そば", "合成"], "memo": "実店舗ではない合成サンプルです。", "mapsURL": null }
+  ]
+}
