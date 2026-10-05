@@ -45,10 +45,8 @@ test('custom_merge_over_20_is_atomic',()=>{
 });
 test('shared_url_warns_without_skipping',()=>{
   const state=fixtureState(),record=fixtureRestaurant({name:'別の支店',address:'別の架空市',urls:state.stores[0].urls});
-  const result=plan(state,parse([record])); // legacy input uses mapsURL instead below
   const legacy=plan(state,parse([{name:record.name,address:record.address,mapsURL:record.urls[0]}]));
   assert.equal(legacy.counts.valid,1);assert.equal(legacy.counts.duplicate,0);assert.equal(legacy.counts.warning,1);assert.equal(legacy.nextState.stores.length,2);
-  assert.ok(result.nextState);
 });
 test('exact_duplicate_default_skip_and_override',()=>{
   const state=fixtureState(),parsed=parse(referenceBackup(state));

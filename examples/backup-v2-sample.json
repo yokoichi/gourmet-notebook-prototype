@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "format": "gourmet-notebook-prototype",
+  "fieldSettings": [
+    {
+      "id": "name",
+      "kind": "builtin",
+      "label": "店名",
+      "visible": true,
+      "required": true
+    },
+    {
+      "id": "genre",
+      "kind": "builtin",
+      "label": "ジャンル",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "phone",
+      "kind": "builtin",
+      "label": "電話",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "address",
+      "kind": "builtin",
+      "label": "住所",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "tags",
+      "kind": "builtin",
+      "label": "タグ",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "memo",
+      "kind": "builtin",
+      "label": "メモ",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "urls",
+      "kind": "builtin",
+      "label": "URL",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "custom_00000000-0000-4000-8000-000000000001",
+      "kind": "text",
+      "label": "食べたいもの",
+      "visible": true,
+      "required": false
+    }
+  ],
+  "restaurants": [
+    {
+      "name": "架空カフェ",
+      "genre": "カフェ",
+      "phone": "+81 00 0000",
+      "address": "架空市",
+      "tags": [
+        "合成"
+      ],
+      "memo": "確認用",
+      "urls": [
+        "https://example.invalid/cafe",
+        "https://example.invalid/menu"
+      ],
+      "customValues": {
+        "custom_00000000-0000-4000-8000-000000000001": "季節のタルト"
+      }
+    }
+  ]
+}
