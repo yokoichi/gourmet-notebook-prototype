@@ -1,8 +1,8 @@
-import { defaultFieldSettings, validateFieldSettings, normalizeRestaurant, restaurantValue, serializeState, MAX_JSON_BYTES, ModelError } from './model.js';
+import { defaultFieldSettings, validateFieldSettings, normalizeRestaurant, restaurantValue, serializeState, MAX_JSON_BYTES, MAX_STORES, FIELD_LIMITS, ModelError } from './model.js';
 
 export const MAX_BYTES = 2 * 1024 * 1024;
 export const MAX_ROWS = 1000;
-export const MAX_STORES = 2000;
+export { MAX_STORES };
 
 const aliases = {
   name: ['name', 'title', '店名', '店舗名', '名前', 'タイトル'],
@@ -10,16 +10,7 @@ const aliases = {
   genre: ['genre', 'category', 'ジャンル'], tags: ['tags', 'タグ'],
   memo: ['memo', 'note', 'メモ', '備考'], mapsURL: ['mapsurl', 'item_content_url', 'url'],
 };
-const limits = { name: 200, address: 500, phone: 60, genre: 40, memo: 2000, mapsURL: 2000 };
-
-export function decodeFile(bytes) {
-  if (bytes.byteLength > MAX_BYTES) throw new Error('ファイルは2 MiBまでです。小さなリストに分けてください。');
-  if ((bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff)) {
-    throw new Error('初版はUTF-8のみ対応しています。UTF-8で書き出してから選択してください。');
-  }
-  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^\uFEFF/, ''); }
-  catch { throw new Error('文字コードを読み取れません。UTF-8のCSV/JSONを選択してください。'); }
-}
+const limits = { ...FIELD_LIMITS, mapsURL: 2000 };
 
 export function parseCSV(text) {
   const rows = [];
@@ -94,62 +85,9 @@ export function normalizeRecord(input) {
   return result;
 }
 
-export function duplicateKeys(store) {
-  const keys = [];
-  if (store.mapsURL) keys.push('url:' + store.mapsURL);
-  if (store.address) keys.push('name-address:' + store.name.normalize('NFKC').toLowerCase() + '\u0000' + store.address.normalize('NFKC').toLowerCase());
-  return keys;
-}
-
-export function buildPreview(text, filename, existing = []) {
-  if (new TextEncoder().encode(text).byteLength > MAX_BYTES) throw new Error('ファイルは2 MiBまでです。');
-  text = text.replace(/^\uFEFF/, '');
-  let records, mapping = [];
-  if (/\.csv$/i.test(filename)) {
-    const rows = parseCSV(text);
-    const headerIndex = rows.slice(0, 10).findIndex(row => row.some(cell => aliases.name.includes(headerKey(cell))));
-    if (headerIndex < 0) throw new Error('店名の列が見つかりません。name / title / 店名の列が必要です。');
-    const headers = rows[headerIndex].map(headerKey);
-    if (new Set(headers).size !== headers.length) throw new Error('CSVに同じ名前の列が複数あります。');
-    for (const [field, names] of Object.entries(aliases)) {
-      const found = headers.find(header => names.includes(header));
-      if (found !== undefined) mapping.push(`${found} → ${field}`);
-    }
-    records = rows.slice(headerIndex + 1).filter(row => row.some(cell => cell.trim())).map(row => {
-      if (row.length !== headers.length) return null;
-      return Object.fromEntries(headers.map((header, index) => [header, row[index]]));
-    });
-  } else if (/\.json$/i.test(filename)) {
-    let data;
-    try { data = JSON.parse(text); } catch { throw new Error('JSONの書式が不正です。'); }
-    checkDepth(data);
-    if (Array.isArray(data)) records = data;
-    else if (isObject(data) && data.schemaVersion === 1 && Array.isArray(data.restaurants)) records = data.restaurants;
-    else throw new Error('JSONは店舗の配列、またはschemaVersion: 1とrestaurants配列を指定してください。MapsのJSON/GeoJSONは未対応です。');
-    mapping = ['name/title/店名 → 店名', 'address・phone・genre・tags・memo/note → 任意項目'];
-  } else throw new Error('CSVまたはJSONを選択してください。ZIPは初版では未対応です。');
-  if (records.length > MAX_ROWS) throw new Error('候補は1,000件までです。');
-  const seen = new Set(existing.flatMap(duplicateKeys));
-  const rows = records.map((input, index) => {
-    try {
-      const record = normalizeRecord(input);
-      const keys = duplicateKeys(record);
-      const duplicate = keys.some(key => seen.has(key));
-      if (!duplicate) keys.forEach(key => seen.add(key));
-      return { index: index + 1, status: duplicate ? 'duplicate' : 'valid', record, error: '' };
-    } catch (error) { return { index: index + 1, status: 'invalid', record: null, error: error.message }; }
-  });
-  const counts = Object.fromEntries(['valid', 'duplicate', 'invalid'].map(status => [status, rows.filter(row => row.status === status).length]));
-  return { rows, counts, mapping };
-}
-
 export function ticketsFor(count) {
   if (!Number.isInteger(count) || count < 0 || count > MAX_ROWS) throw new Error('店舗数は0〜1,000の整数で入力してください。');
   return Math.ceil(count / 100);
-}
-
-export function exportRecords(stores) {
-  return JSON.stringify({ schemaVersion: 1, restaurants: stores.map(store => ({ name: store.name, address: store.address, phone: store.phone, genre: store.genre, tags: [...store.tags], memo: store.memo, mapsURL: store.mapsURL })) }, null, 2);
 }
 
 function fileLimits(filename) {

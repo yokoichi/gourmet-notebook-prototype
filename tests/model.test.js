@@ -14,6 +14,9 @@ test('unsafe_url_rejected', () => {
   for(const url of ['javascript:alert(1)','data:text/plain,x','file:///x','/relative','https://u:p@example.invalid/','https://example.invalid/\nx','https://example.invalid/?'+'x'.repeat(2000)]) assert.throws(()=>normalize(fixtureRestaurant({urls:[url]})),url);
   assert.equal(normalize(fixtureRestaurant({urls:['http://example.invalid/?q=x#memo']})).urls[0],'http://example.invalid/?q=x#memo');
 });
+test('url_errors_identify_the_input_row', () => {
+  assert.throws(()=>normalize(fixtureRestaurant({urls:['https://example.invalid/','javascript:alert(1)']})),e=>e.fieldId==='urls'&&e.rowIndex===2);
+});
 test('settings_lock_name_and_hidden_required', () => {
   for(const changes of [{visible:false},{required:false}]) { const s=fixtureSettings(); Object.assign(s[0],changes); assert.throws(()=>api('validateFieldSettings')(s)); }
   const s=fixtureSettings(); s[1].visible=false;s[1].required=true; assert.throws(()=>api('validateFieldSettings')(s));
@@ -59,6 +62,9 @@ test('canonical_v2_retains_all_values_and_measures_real_utf8', () => {
   const result=api('serializeState')(state);
   assert.deepEqual(JSON.parse(result.json),referenceBackup(state)); assert.equal(result.bytes,Buffer.byteLength(result.json));
   assert.equal(result.json,JSON.stringify(referenceBackup(state)));assert.ok(!result.json.includes('fixture-0'));
+});
+test('canonical_fields_reject_null_instead_of_coercing_to_empty', () => {
+  for(const key of ['genre','phone','address','memo','tags','urls','customValues']) assert.throws(()=>normalize(fixtureRestaurant({[key]:null})),`${key} must retain its declared type`);
 });
 test('reset_fields_keeps_custom_definitions_and_values', () => {
   const state=fixtureState(1,{custom:true});state.fieldSettings.reverse();

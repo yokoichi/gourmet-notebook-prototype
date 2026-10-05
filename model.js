@@ -45,30 +45,32 @@ function normalizedValue(input, settings, requiredMode) {
   if (!object(input)) fail('FIELD_TYPE','店舗データの形式が不正です。');
   if (Object.keys(input).some(key=>!VALUE_KEYS.includes(key))) fail('UNKNOWN_FIELD','未対応の店舗項目があります。');
   const result={};
-  for (const [id,limit] of Object.entries(FIELD_LIMITS)) result[id]=text(input[id]??'',limit,id);
+  for (const [id,limit] of Object.entries(FIELD_LIMITS)) result[id]=text(input[id]===undefined?'':input[id],limit,id);
   if (!result.name) fail('REQUIRED_FIELD','店名を入力してください。','name');
-  const tags=input.tags??[];
+  const tags=input.tags===undefined?[]:input.tags;
   if (!Array.isArray(tags)||tags.some(tag=>typeof tag!=='string')) fail('FIELD_TYPE','タグは文字列の配列にしてください。','tags');
   result.tags=[...new Set(tags.map(tag=>tag.trim()).filter(Boolean))];
   if (result.tags.length>12||result.tags.some(tag=>tag.length>30)) fail('FIELD_LENGTH','タグは12個まで、各30文字です。','tags');
-  const urls=input.urls??[];
+  const urls=input.urls===undefined?[]:input.urls;
   if (!Array.isArray(urls)||urls.length>10) fail('INVALID_URL','URLは10件までの配列にしてください。','urls');
   result.urls=[];
-  for (const value of urls) {
+  for (const [index,value] of urls.entries()) {
+    try {
     if (typeof value!=='string'||/[\u0000-\u001f\u007f]/.test(value)) fail('INVALID_URL','URLに不正な文字があります。','urls');
     const urlText=value.trim(); if (!urlText) continue;
     if (urlText.length>2000) fail('INVALID_URL','URLは2,000文字までです。','urls');
     let url; try { url=new URL(urlText); } catch { fail('INVALID_URL','URLの形式を確認してください。','urls'); }
     if (!['http:','https:'].includes(url.protocol)||url.username||url.password) fail('INVALID_URL','URLは認証情報なしのhttp/httpsだけです。','urls');
     if (!result.urls.includes(urlText)) result.urls.push(urlText);
+    } catch(error) { if(error instanceof ModelError) error.rowIndex=index+1; throw error; }
   }
-  const values=input.customValues??{};
+  const values=input.customValues===undefined?{}:input.customValues;
   if (!object(values)) fail('FIELD_TYPE','カスタム値の形式が不正です。');
   const definitions=new Map(settings.filter(f=>f.kind==='text').map(f=>[f.id,f]));
   if (Object.keys(values).some(id=>!definitions.has(id))) fail('UNKNOWN_FIELD','未定義のカスタム項目があります。');
   result.customValues={};
   for (const id of definitions.keys()) {
-    const value=text(values[id]??'',1000,id); if (value) result.customValues[id]=value;
+    const value=text(values[id]===undefined?'':values[id],1000,id); if (value) result.customValues[id]=value;
   }
   if (requiredMode==='manual') {
     for (const field of settings.filter(f=>f.required)) {

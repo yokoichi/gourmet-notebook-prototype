@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPreview, decodeFile, parseCSV, normalizeRecord, exportRecords, ticketsFor, MAX_BYTES } from '../importer.js';
+import { parseImport, prepareImport, decodeImportFile, parseCSV, normalizeRecord, ticketsFor, MAX_BYTES } from '../importer.js';
+import { defaultFieldSettings, serializeState } from '../model.js';
+const buildPreview = (text,filename,existing=[]) => {
+  const fields=defaultFieldSettings();
+  const stores=existing.map((input,index)=>{const {mapsURL,...r}=normalizeRecord(input);return {...r,urls:mapsURL?[mapsURL]:[],customValues:{},id:'existing-'+index};});
+  return prepareImport({fieldSettings:fields,stores},parseImport(text,filename),{mode:'append',applySettings:false,includeDuplicates:false,createId:()=>crypto.randomUUID()});
+};
 
 test('CSV preserves quoted commas, newlines and doubled quotes', () => {
   const result = buildPreview('title,note\r\n"架空,カフェ","ひとこと\n""二言目"""\r\n', 'saved.csv');
@@ -21,17 +27,17 @@ test('blank CSV rows do not consume the candidate limit', () => {
   assert.equal(result.counts.valid, 1);
 });
 
-test('sample preview separates valid, duplicate and missing name without changing originals', () => {
+test('sample preview warns on differing same-address rows without changing originals', () => {
   const original = [{ name: '既存店', address: '架空市', mapsURL: '' }];
   const snapshot = JSON.stringify(original);
   const result = buildPreview(readFileSync(new URL('../examples/saved-sample.csv', import.meta.url), 'utf8'), 'sample.csv', original);
-  assert.deepEqual(result.counts, { valid: 2, duplicate: 1, invalid: 1 });
+  assert.deepEqual(result.counts, { valid: 3, duplicate: 0, invalid: 1, warning: 1 });
   assert.equal(JSON.stringify(original), snapshot);
 });
 
-test('existing URL duplicates are skipped but nameless-address chains are not merged', () => {
+test('shared URL and addressless chains are not automatically merged', () => {
   const result = buildPreview('title,address,item_content_url\n同名,,https://example.invalid/place\n同名,,\n同名,,\n', 'sample.csv', [{ name: '別名', address: '', mapsURL: 'https://example.invalid/place' }]);
-  assert.deepEqual(result.counts, { valid: 2, duplicate: 1, invalid: 0 });
+  assert.deepEqual(result.counts, { valid: 3, duplicate: 0, invalid: 0, warning: 1 });
 });
 
 test('malformed quotes and duplicate headers reject the whole CSV', () => {
@@ -46,8 +52,11 @@ test('mismatched CSV column count is previewed as an invalid row', () => {
 
 test('versioned JSON round-trips every editable field and phone formatting', () => {
   const record = normalizeRecord({ name: '架空店', address: '架空市', phone: '+81 00 0123', genre: 'そば', tags: ['手動'], memo: 'メモ\n改行', mapsURL: 'https://example.invalid/place' });
-  const result = buildPreview(exportRecords([record]), 'export.json');
-  assert.deepEqual(result.rows[0].record, record);
+  const imported=parseImport(JSON.stringify({schemaVersion:1,restaurants:[record]}),'old.json');
+  const value=imported.rows[0].record;
+  const exported=serializeState({fieldSettings:defaultFieldSettings(),stores:[{...value,id:'roundtrip'}]});
+  assert.deepEqual(parseImport(exported.json,'export.json').rows[0].record,value);
+  assert.deepEqual(value.urls,[record.mapsURL]);assert.equal(value.phone,record.phone);
 });
 
 test('unknown Maps JSON and malformed schemas fail instead of implying compatibility', () => {
@@ -58,7 +67,7 @@ test('unknown Maps JSON and malformed schemas fail instead of implying compatibi
 
 test('JSON row types and unsafe URL schemes are marked invalid', () => {
   const result = buildPreview(JSON.stringify([{ name: '安全店' }, { name: '危険', mapsURL: 'javascript:alert(1)' }, { name: '電話', phone: 123 }, { name: 'タグ', tags: [{}] }, null]), 'stores.json');
-  assert.deepEqual(result.counts, { valid: 1, duplicate: 0, invalid: 4 });
+  assert.deepEqual(result.counts, { valid: 1, duplicate: 0, invalid: 4, warning: 0 });
 });
 
 test('HTML and prompt instructions remain inert data', () => {
@@ -69,13 +78,13 @@ test('HTML and prompt instructions remain inert data', () => {
 });
 
 test('invalid encoding and oversize bytes are rejected', () => {
-  assert.throws(() => decodeFile(new Uint8Array([0xff, 0xfe, 0, 0])));
-  assert.throws(() => decodeFile(new Uint8Array([0xc3, 0x28])));
-  assert.throws(() => decodeFile(new Uint8Array(MAX_BYTES + 1)));
+  assert.throws(() => decodeImportFile(new Uint8Array([0xff, 0xfe, 0, 0]),'x.csv'));
+  assert.throws(() => decodeImportFile(new Uint8Array([0xc3, 0x28]),'x.csv'));
+  assert.throws(() => decodeImportFile(new Uint8Array(MAX_BYTES + 1),'x.csv'));
 });
 
 test('candidate count, nested JSON and field limits fail explicitly', () => {
-  assert.throws(() => buildPreview(JSON.stringify(Array.from({ length: 1001 }, () => ({ name: '店' }))), 'big.json'));
+  assert.throws(() => buildPreview(JSON.stringify(Array.from({ length: 2001 }, () => ({ name: '店' }))), 'big.json'));
   let nested = '"deep"'; for (let i = 0; i < 20; i++) nested = '[' + nested + ']';
   assert.throws(() => buildPreview(nested, 'deep.json'));
   assert.equal(buildPreview(JSON.stringify([{ name: 'x'.repeat(201) }]), 'long.json').counts.invalid, 1);

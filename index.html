@@ -14,17 +14,17 @@
 <body>
   <header class="site-header">
     <a class="brand" href="./" aria-label="グルメ手帳のトップ"><span class="brand-mark" aria-hidden="true">g.</span><span>グルメ手帳<span class="brand-sub">a little collection of good places</span></span></a>
-    <div class="header-meta"><span class="prototype-label">PROTOTYPE</span><button id="about-button" class="text-button" type="button">この試作について</button></div>
+    <div class="header-meta"><span class="prototype-label">PROTOTYPE</span><button id="settings-button" class="text-button" type="button">項目設定</button><button id="about-button" class="text-button" type="button">この試作について</button></div>
   </header>
   <main>
     <section class="intro" aria-labelledby="intro-title">
       <div class="intro-copy"><p class="eyebrow">YOUR NEXT GOOD MEAL</p><h1 id="intro-title">行きたいお店を、<br>ひとつの手帳に。</h1><p class="intro-description">気になった一軒も、集めてきたリストも。<br>好きな味から、次の寄り道を見つけよう。</p></div>
       <div class="intro-art" aria-hidden="true"><div class="art-caption">a place for<br>your favorites.</div><div class="plate"><span class="plate-center">おいしい<br>寄り道</span></div><div class="art-note"><span>CAFE / DINNER / LITTLE FINDS</span><span>collect a little, enjoy a lot.</span></div></div>
     </section>
-    <section class="prototype-notice" aria-label="試作の保存と通信"><span class="notice-dot" aria-hidden="true"></span><p><strong>この画面だけで試すプロトタイプです。</strong> サーバ保存・アカウント同期・AI API・購入は未実装。入力や取り込みはブラウザ内で処理し、再読み込みで消えます。</p></section>
+    <section class="prototype-notice" aria-label="試作の保存と通信"><span class="notice-dot" aria-hidden="true"></span><p><strong>この画面だけで試すプロトタイプです。</strong> サーバ保存・アカウント同期・AI API・購入は未実装。店舗と項目設定はブラウザ内だけで保持し、再読み込みで消えます。必要なら店舗＋設定JSONを書き出してください。</p></section>
     <section class="add-section" aria-label="お店を追加">
       <button class="action-card import-action" id="import-button" type="button"><span class="action-symbol" aria-hidden="true">↥</span><span><span class="action-overline">おすすめ · CSV / JSON</span><strong>リストをまとめて取り込む</strong><span class="action-description">ファイルを選んで、登録前に確認</span></span><span class="action-arrow" aria-hidden="true">↗</span></button>
-      <button class="action-card manual-action" id="add-button" type="button"><span class="action-symbol" aria-hidden="true">＋</span><span><span class="action-overline">店名だけでもOK</span><strong>一軒ずつメモする</strong><span class="action-description">気になるお店を手動で追加</span></span><span class="action-arrow" aria-hidden="true">↗</span></button>
+      <button class="action-card manual-action" id="add-button" type="button"><span class="action-symbol" aria-hidden="true">＋</span><span><span id="manual-overline" class="action-overline">店名だけでもOK</span><strong>一軒ずつメモする</strong><span class="action-description">気になるお店を手動で追加</span></span><span class="action-arrow" aria-hidden="true">↗</span></button>
     </section>
     <section class="notebook" aria-labelledby="notebook-title">
       <div class="section-heading"><div><p class="eyebrow">MY COLLECTION</p><h2 id="notebook-title">お店の手帳 <span id="total-count" class="count-pill">8</span></h2></div><button id="export-button" class="outline-button" type="button">JSONを書き出す <span aria-hidden="true">↓</span></button></div>
@@ -39,12 +39,45 @@
   </main>
   <footer><span class="footer-brand">グルメ手帳 <small>prototype / 01</small></span><span>ひとつずつ、好きなお店を。</span></footer>
 
-  <dialog id="manual-dialog" class="dialog"><form id="manual-form"><div class="dialog-heading"><div><p class="eyebrow">A NEW LITTLE FIND</p><h2 id="manual-title">お店をメモする</h2></div><button class="close-button" type="button" data-close="manual-dialog" aria-label="閉じる">×</button></div><p class="dialog-description">保存はこの画面内だけ。必要ならJSONで書き出せます。</p><input name="id" type="hidden"><label>店名 <span class="required">必須</span><input name="name" required maxlength="200" placeholder="気になったお店の名前"></label><div class="form-columns"><label>ジャンル<input name="genre" maxlength="40" list="genre-options" placeholder="例：カフェ"><datalist id="genre-options"><option value="カフェ"><option value="和食"><option value="イタリアン"><option value="ラーメン"><option value="パン・スイーツ"></datalist></label><label>電話<input name="phone" type="tel" maxlength="60" placeholder="任意"></label></div><label>住所<input name="address" maxlength="500" placeholder="エリアだけでもOK"></label><label>タグ<input name="tags" maxlength="300" placeholder="カンマで区切る（例：ランチ, ひとり時間）"></label><label>メモ<textarea name="memo" rows="3" maxlength="2000" placeholder="食べたいもの、訪れたいタイミングなど"></textarea></label><p id="manual-error" class="form-error" role="alert"></p><div class="dialog-actions"><button class="outline-button" type="button" data-close="manual-dialog">キャンセル</button><button class="primary-button" type="submit">この画面に追加</button></div></form></dialog>
+  <dialog id="manual-dialog" class="dialog" aria-labelledby="manual-title"><form id="manual-form" novalidate>
+    <div class="dialog-heading"><div><p class="eyebrow">A NEW LITTLE FIND</p><h2 id="manual-title">お店をメモする</h2></div><button class="close-button" type="button" data-close="manual-dialog" aria-label="閉じる">×</button></div>
+    <p class="dialog-description">この画面内だけで保持。再読み込みで店舗と設定が消えます。必要なら店舗＋設定のJSONを書き出してください。</p>
+    <div id="manual-fields"></div><p id="manual-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button class="outline-button" type="button" data-close="manual-dialog">キャンセル</button><button class="primary-button" type="submit">この画面に追加</button></div>
+  </form></dialog>
 
-  <dialog id="import-dialog" class="dialog import-dialog"><div class="dialog-heading"><div><p class="eyebrow">BRING YOUR COLLECTION</p><h2>リストを取り込む</h2></div><button class="close-button" type="button" data-close="import-dialog" aria-label="閉じる">×</button></div><p class="dialog-description">UTF-8のCSVまたは対応JSONを選択してください。最大2 MiB・1,000候補。ファイルは送信しません。ZIPとすべてのTakeout形式への対応は次の段階です。</p><label class="file-drop"><span class="file-symbol" aria-hidden="true">↥</span><strong>CSV / JSONファイルを選ぶ</strong><span>解析してから、取り込む内容を確認</span><input id="file-input" type="file" accept=".csv,.json,text/csv,application/json"></label><p class="example-links">合成ファイルで試す：<a href="./examples/saved-sample.csv" download>CSV</a><span> / </span><a href="./examples/restaurants-sample.json" download>JSON</a></p><p id="import-error" class="form-error" role="alert"></p><div id="import-preview" hidden><div id="preview-summary" class="preview-summary"></div><div id="column-mapping" class="column-mapping"></div><p class="preview-help">重複候補はスキップ。店名なし・形式エラーは追加しません。元ファイルは変更しません。</p><div id="preview-rows" class="preview-rows"></div><p id="preview-overflow" class="preview-help"></p></div><div class="dialog-actions"><button class="outline-button" type="button" data-close="import-dialog">キャンセル</button><button id="commit-import" class="primary-button" type="button" disabled>確認してこの画面に追加</button></div></dialog>
+  <dialog id="settings-dialog" class="dialog settings-dialog" aria-labelledby="settings-title"><form id="settings-form" novalidate>
+    <div class="dialog-heading"><div><p class="eyebrow">MAKE IT YOUR NOTEBOOK</p><h2 id="settings-title">項目設定</h2></div><button class="close-button" type="button" data-close="settings-dialog" aria-label="閉じる">×</button></div>
+    <p class="dialog-description">追加・編集フォームの項目名・順序・表示・必須を変更できます。非表示や改名で値は消えません。一覧・検索・JSONには保持されます。店名は表示・必須です。</p>
+    <p class="preview-help">設定はこの画面内だけ。再読み込みで消えます。必要なら店舗＋設定JSONを書き出してください。</p>
+    <div id="settings-fields"></div><p id="settings-note" class="preview-help" role="status"></p>
+    <div class="settings-tools"><button id="add-custom-field" class="outline-button" type="button">＋ カスタム項目を追加</button><button id="reset-field-settings" class="outline-button" type="button">標準の表示に戻す</button></div>
+    <p class="preview-help">カスタムは文字列20項目まで。標準の表示に戻してもカスタム定義と入力値は保持します。必須設定は手動保存に適用し、取込み・復元の未入力は警告します。</p>
+    <p id="settings-feedback" class="preview-help" role="status" aria-live="polite"></p><p id="settings-error" class="form-error" role="alert"></p>
+    <div class="dialog-actions"><button class="outline-button" type="button" data-close="settings-dialog">キャンセル</button><button class="primary-button" type="submit">この画面に適用</button></div>
+  </form></dialog>
+
+  <dialog id="import-dialog" class="dialog import-dialog" aria-labelledby="import-title">
+    <div class="dialog-heading"><div><p class="eyebrow">BRING YOUR COLLECTION</p><h2 id="import-title">リストを取り込む</h2></div><button class="close-button" type="button" data-close="import-dialog" aria-label="閉じる">×</button></div>
+    <p class="dialog-description">UTF-8のCSV（2 MiB・1,000候補）またはJSON（8 MiB・2,000店舗）。ファイルは送信しません。ZIP・すべてのTakeout形式・Maps JSON/GeoJSONには未対応です。</p>
+    <p class="preview-help">反映はこの画面内だけ。再読み込みで店舗と設定が消えます。必要なら店舗＋設定JSONを書き出してください。</p>
+    <label class="file-drop"><span class="file-symbol" aria-hidden="true">↥</span><strong>CSV / JSONファイルを選ぶ</strong><span>解析してから、取り込む内容を確認</span><input id="file-input" type="file" accept=".csv,.json,text/csv,application/json"></label>
+    <p class="example-links">合成ファイルで試す：<a href="./examples/saved-sample.csv" download>CSV</a> / <a href="./examples/restaurants-sample.json" download>旧JSON</a> / <a href="./examples/backup-v2-sample.json" download>店舗＋設定JSON</a></p>
+    <p id="import-error" class="form-error" role="alert"></p>
+    <div id="import-preview" hidden>
+      <label class="mode-label" for="import-mode">取込み方法<select id="import-mode"><option value="append">店舗を追加する</option><option value="restore" disabled>店舗と設定を置き換えて復元する</option></select></label>
+      <label id="apply-settings-label" class="check-label"><input id="apply-import-settings" type="checkbox">読み込んだ表示・必須設定も適用する</label>
+      <label id="duplicates-label" class="check-label"><input id="include-duplicates" type="checkbox">完全一致の重複候補も追加する</label>
+      <div id="restore-section" class="restore-section" hidden><p id="restore-description"></p><button id="export-before-restore" class="outline-button" type="button">現在のJSONを書き出す</button><label class="check-label"><input id="restore-confirm" type="checkbox" aria-describedby="restore-description">店舗と設定を置き換えることを確認した</label></div>
+      <div id="preview-summary" class="preview-summary"></div><div id="column-mapping" class="column-mapping"></div>
+      <p class="preview-help">完全一致の重複候補は初期値スキップ。共有URL・同名住所は注意候補として追加可能です。既存店の上書きや原本の変更はしません。</p>
+      <div id="preview-rows" class="preview-rows"></div><p id="preview-overflow" class="preview-help"></p><p id="import-details" class="preview-help import-details"></p>
+    </div>
+    <div class="dialog-actions"><button class="outline-button" type="button" data-close="import-dialog">キャンセル</button><button id="commit-import" class="primary-button" type="button" disabled>確認してこの画面に追加</button></div>
+  </dialog>
 
   <dialog id="classification-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">CLASSIFICATION EXAMPLE</p><h2>サンプル分類例</h2></div><button class="close-button" type="button" data-close="classification-dialog" aria-label="閉じる">×</button></div><p class="dialog-description">合成サンプルに用意した分類例です。取り込んだ店名やメモをAIへ送信・分類していません。</p><div class="classification-example"><span>ひだまり珈琲（サンプル）</span><strong>カフェ</strong><span class="tag">コーヒー</span><span class="tag">ひとり時間</span></div><label class="estimate-field">見積例の店舗数<input id="estimate-count" type="number" min="0" max="1000" step="1" value="100"></label><p id="estimate-result" class="estimate-result"></p><p class="preview-help">100店舗ごとに切り上げ。見積例だけで、予約・消費はありません。</p><div class="dialog-actions"><button class="primary-button" type="button" data-close="classification-dialog">手帳に戻る</button></div></dialog>
 
-  <dialog id="about-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">ABOUT THIS PROTOTYPE</p><h2>安心して試すために</h2></div><button class="close-button" type="button" data-close="about-dialog" aria-label="閉じる">×</button></div><div class="about-copy"><p>これは操作感を確かめる静的プロトタイプです。最初のお店はすべて合成サンプルです。</p><p>入力・取り込みはブラウザのメモリ内のみで扱い、ページを再読み込みすると消えます。必要な内容はJSONを書き出して手元に保存してください。</p><p>選択ファイル・店名・メモは外部へ送信しません。ページ自体の取得通信は発生し、GitHub Pages側にはアクセスに関する記録が残る場合があります。</p><p>アカウント共通の店舗リスト・残高、ZIP対応、AI分類、チケット購入は今後の機能です。この試作にはログイン、同期、実API呼び出し、決済、分析タグがありません。</p><p>分析プロンプトはローカルで検討してからサービスへ反映します。このページからAIへ送信することはありません。</p></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="about-dialog">わかりました</button></div></dialog>
+  <dialog id="about-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">ABOUT THIS PROTOTYPE</p><h2>安心して試すために</h2></div><button class="close-button" type="button" data-close="about-dialog" aria-label="閉じる">×</button></div><div class="about-copy"><p>これは操作感を確かめる静的プロトタイプです。最初のお店はすべて合成サンプルです。</p><p>入力・取り込みはブラウザのメモリ内のみで扱い、ページを再読み込みすると消えます。店舗と項目設定はJSONを書き出して手元に保存してください。</p><p>選択ファイル・店名・メモは外部へ送信しません。ページ自体の取得通信は発生し、GitHub Pages側にはアクセスに関する記録が残る場合があります。</p><p>アカウント共通の店舗リスト・残高、ZIP対応、AI分類、チケット購入は今後の機能です。この試作にはログイン、同期、実API呼び出し、決済、分析タグがありません。</p><p>分析プロンプトはローカルで検討してからサービスへ反映します。このページからAIへ送信することはありません。</p></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="about-dialog">わかりました</button></div></dialog>
 </body>
 </html>
