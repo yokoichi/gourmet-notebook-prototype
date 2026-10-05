@@ -50,6 +50,21 @@ test('tags_382_can_be_reedited', () => {
   const state=fixtureState(); const result=api('applyManualDraft')(state,{id:state.stores[0].id,values:{tags:tags.join(', ')}},nextFixtureId);
   assert.deepEqual(result.nextState.stores[0].tags,tags);
 });
+test('manual_tags_keep_quoted_delimiters_newlines_and_quotes', () => {
+  const state=fixtureState();
+  const result=api('applyManualDraft')(state,{id:state.stores[0].id,values:{tags:'"朝,昼", "夜;遅め", "和、洋", "line\nbreak", "a""b"'}},nextFixtureId);
+  assert.deepEqual(result.nextState.stores[0].tags,['朝,昼','夜;遅め','和、洋','line\nbreak','a"b']);
+  assert.deepEqual(api('applyManualDraft')(state,{id:state.stores[0].id,values:{tags:['朝,昼','cr\r\nlf']}},nextFixtureId).nextState.stores[0].tags,['朝,昼','cr\r\nlf']);
+  assert.throws(()=>api('applyManualDraft')(state,{id:state.stores[0].id,values:{tags:'"閉じていない'}},nextFixtureId),e=>e.fieldId==='tags');
+});
+test('reset_recovers_invalid_builtin_draft_and_keeps_custom_definitions', () => {
+  const settings=fixtureSettings({custom:true}),snapshot=structuredClone(settings);
+  settings[0].label='';settings[1].label='x'.repeat(41);settings[0].visible=false;settings[0].required=false;
+  const result=api('resetFieldSettings')(settings);
+  assert.deepEqual(result.slice(0,7),api('defaultFieldSettings')());
+  assert.deepEqual(result.at(-1),{...snapshot.at(-1),visible:false,required:false});
+  assert.equal(settings[0].label,'');
+});
 test('canonical_byte_boundary_is_atomic', () => {
   const full=sizedState(8*1024*1024);
   assert.equal(api('serializeState')(full).bytes,8*1024*1024);

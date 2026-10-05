@@ -163,6 +163,16 @@ function fingerprint(record) {
 function identityKeys(record) {
   return [...record.urls.map(url=>'url:'+url),...(record.address?['name-address:'+record.name.normalize('NFKC').toLowerCase()+'\u0000'+record.address.normalize('NFKC').toLowerCase()]:[])];
 }
+function describeSettings(current,incoming,next,restore) {
+  const entry=(fields,id)=>{const index=fields.findIndex(field=>field.id===id);return index<0?null:{...fields[index],position:index+1};};
+  const description=field=>field?`「${field.label}」 / ${field.position}番目 / 表示${field.visible?'ON':'OFF'} / 必須${field.required?'ON':'OFF'}`:'定義なし';
+  return [...new Set([...incoming,...current].map(field=>field.id))].flatMap(id=>{
+    const before=entry(current,id),file=entry(incoming,id),after=entry(next,id);
+    if(!restore&&JSON.stringify(before)===JSON.stringify(file)&&JSON.stringify(before)===JSON.stringify(after))return [];
+    const status=!after?'反映しない':!before?'新規項目を追加':JSON.stringify(before)===JSON.stringify(after)?'現在の設定を維持':'設定を変更';
+    return [`${id}\n現在：${description(before)}\nファイル：${description(file)}\n反映：${description(after)}（${status}）`];
+  });
+}
 export function prepareImport(state,parsed,options) {
   const result={rows:[],counts:{valid:0,duplicate:0,invalid:0,warning:0},fieldChanges:[],error:'',nextState:null,serialized:null};
   try {
@@ -185,18 +195,17 @@ export function prepareImport(state,parsed,options) {
     if(restore) fields=parsed.fieldSettings;
     else if(parsed.fieldSettings&&options.applySettings) {
       fields=[...parsed.fieldSettings,...state.fieldSettings.filter(field=>field.kind==='text'&&!parsed.fieldSettings.some(f=>f.id===field.id))];
-      result.fieldChanges.push('ファイルの表示名・順序・表示・必須を適用します。現在だけのカスタム定義と値は保持します。');
     } else {
       fields=state.fieldSettings.map(f=>({...f}));
       if(parsed.fieldSettings) {
         const needed=new Set(selected.flatMap(row=>Object.keys(row.record.customValues)));
         for(const field of parsed.fieldSettings.filter(f=>f.kind==='text'&&needed.has(f.id)&&!fields.some(current=>current.id===f.id))) {
-          fields.push({...field,visible:false,required:false});result.fieldChanges.push(`${field.label}：非表示・任意の項目を追加して値を保持します。`);
+          fields.push({...field,visible:false,required:false});
         }
-        if(parsed.fieldSettings.some(field=>fields.some(current=>current.id===field.id&&JSON.stringify(current)!==JSON.stringify(field)))) result.fieldChanges.push('既存項目の設定は現在の表示名・順序・必須を維持します。');
       }
     }
     fields=validateFieldSettings(fields);
+    if(parsed.fieldSettings)result.fieldChanges=describeSettings(state.fieldSettings,parsed.fieldSettings,fields,restore);
     for(const row of result.rows.filter(row=>row.record)) {
       const missing=fields.filter(field=>field.required&&field.id!=='name').filter(field=>{
         const value=field.kind==='text'?row.record.customValues[field.id]:row.record[field.id];return !value||(Array.isArray(value)&&!value.length);

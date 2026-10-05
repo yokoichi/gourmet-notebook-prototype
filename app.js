@@ -45,7 +45,7 @@ function render() {
     store.tags.forEach(tag => tags.append(element('span', 'tag', tag)));
     const bottom = element('div', 'card-bottom');
     const edit = element('button', 'edit-button', 'メモを編集 ↗');
-    edit.type = 'button'; edit.setAttribute('aria-label', store.name + 'を編集');
+    edit.type = 'button'; edit.dataset.storeId=store.id;edit.setAttribute('aria-label', store.name + 'を編集');
     edit.addEventListener('click', () => openManual(store));
     bottom.append(element('span', '', 'a little favorite.'), edit);
     card.append(top, element('h3', '', store.name), element('p', 'card-address', store.address || '住所のメモはまだありません'), tags);
@@ -61,7 +61,11 @@ function openDialog(id, origin = document.activeElement) {
   if(document.querySelector('dialog[open]')) return false;
   dialogOrigins.set(id,origin);document.getElementById(id).showModal();return true;
 }
-document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('close',()=>dialogOrigins.get(dialog.id)?.focus()));
+document.querySelectorAll('dialog').forEach(dialog=>dialog.addEventListener('close',()=>{
+  const origin=dialogOrigins.get(dialog.id);
+  const current=origin?.dataset.storeId?[...$('#restaurant-grid').querySelectorAll('.edit-button')].find(button=>button.dataset.storeId===origin.dataset.storeId):null;
+  (origin?.isConnected?origin:current||$('#result-count')).focus();dialogOrigins.delete(dialog.id);
+}));
 function commitState(result, redraw = true) {
   state=result.nextState;serialized=result.serialized;stateRevision++;dirty=true;
   $('#manual-overline').textContent=state.fieldSettings.filter(f=>f.required).length>1?'項目設定に合わせて入力':'店名だけでもOK';if(redraw)render();

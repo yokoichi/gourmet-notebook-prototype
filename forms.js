@@ -1,4 +1,10 @@
-import { BUILTIN_LABELS, FIELD_LIMITS } from './model.js';
+import { BUILTIN_LABELS, FIELD_LIMITS, parseManualTags } from './model.js';
+
+const manualSnapshots=new WeakMap();
+const formatTags=tags=>tags.map(tag=>/[",;、\r\n]/.test(tag)?'"'+tag.replaceAll('"','""')+'"':tag).join(', ');
+function manualValues(form,settings) {
+  return Object.fromEntries(settings.filter(f=>f.visible).map(field=>[field.id,field.id==='urls'?[...form.querySelectorAll('.url-input')].map(input=>input.value):form.elements.namedItem(field.id).value]));
+}
 
 const node=(tag,className='',text='')=>{const el=document.createElement(tag);el.className=className;el.textContent=text;return el;};
 const button=(text,className,action)=>{const el=node('button',className,text);el.type='button';el.addEventListener('click',action);return el;};
@@ -35,21 +41,25 @@ export function renderManualFields(container,settings,value) {
     if(field.id==='urls')renderUrls(group,field,value?.urls||[]);
     else {
       const label=node('label','field-label',field.label+(field.required?'（必須）':'（任意）'));
-      const multi=field.id==='memo'||field.kind==='text';const input=node(multi?'textarea':'input');
-      input.name=field.id;input.id=`manual-${field.id}`;input.required=field.required;input.maxLength=field.kind==='text'?1000:field.id==='tags'?382:FIELD_LIMITS[field.id];
+      const multi=field.id==='memo'||field.id==='tags'||field.kind==='text';const input=node(multi?'textarea':'input');
+      input.name=field.id;input.id=`manual-${field.id}`;input.required=field.required;input.maxLength=field.kind==='text'?1000:field.id==='tags'?766:FIELD_LIMITS[field.id];
       input.setAttribute('aria-describedby','manual-error');if(multi)input.rows=3;else input.type=field.id==='phone'?'tel':'text';
-      input.value=field.kind==='text'?(value?.customValues[field.id]||''):field.id==='tags'?(value?.tags||[]).join(', '):(value?.[field.id]||'');
+      input.value=field.kind==='text'?(value?.customValues[field.id]||''):field.id==='tags'?formatTags(value?.tags||[]):(value?.[field.id]||'');
       if(field.id==='tags')input.placeholder='カンマで区切る（例：ランチ, ひとり時間）';
       label.htmlFor=input.id;group.append(label,input);
+      if(field.id==='tags')group.append(node('small','field-help','区切りや改行を含むタグは引用符で囲みます（例："朝,昼", 夜）。タグ内の引用符は2つ重ねます。'));
       if(field.kind==='text')group.append(node('small','field-help',`カスタム項目 · ${field.id.slice(-6)}`));
       else if(field.label!==BUILTIN_LABELS[field.id])group.append(node('small','field-help',`元の項目：${BUILTIN_LABELS[field.id]}`));
     }
     container.append(group);
   }
+  const form=container.closest('form');
+  manualSnapshots.set(form,{initial:value?manualValues(form,settings):null,tags:value?.tags||[]});
 }
 export function readManualValues(form,settings) {
-  const values={};
-  for(const field of settings.filter(f=>f.visible))values[field.id]=field.id==='urls'?[...form.querySelectorAll('.url-input')].map(input=>input.value):form.elements.namedItem(field.id).value;
+  const current=manualValues(form,settings),snapshot=manualSnapshots.get(form),values={};
+  for(const [id,value] of Object.entries(current))if(!snapshot?.initial||JSON.stringify(value)!==JSON.stringify(snapshot.initial[id]))values[id]=value;
+  if(Object.hasOwn(values,'tags'))values.tags=parseManualTags(values.tags).map(tag=>snapshot?.tags.find(original=>original.replace(/\r\n?/g,'\n')===tag)??tag);
   return values;
 }
 export function renderSettingsFields(container,draft,onChange) {

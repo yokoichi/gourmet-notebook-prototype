@@ -33,7 +33,7 @@ export function validateFieldSettings(settings) {
   return result;
 }
 export function resetFieldSettings(settings) {
-  return [...defaultFieldSettings(),...validateFieldSettings(settings).filter(f=>f.kind==='text').map(f=>({...f,visible:false,required:false}))];
+  return validateFieldSettings([...defaultFieldSettings(),...settings.filter(f=>f.kind==='text').map(f=>({...f,visible:false,required:false}))]);
 }
 function text(value, limit, id) {
   if (typeof value!=='string') fail('FIELD_TYPE','文字列で入力してください。',id);
@@ -103,6 +103,22 @@ export function applyFieldSettings(state,settings) {
   const nextState={fieldSettings:validateFieldSettings(settings),stores:state.stores};
   return {nextState,serialized:serializeState(nextState)};
 }
+export function parseManualTags(value) {
+  if(typeof value!=='string') fail('FIELD_TYPE','タグ入力が不正です。','tags');
+  const tags=[];let tag='',quoted=false,closed=false;
+  for(let i=0;i<value.length;i++) {
+    const char=value[i];
+    if(quoted) {
+      if(char==='"'&&value[i+1]==='"'){tag+='"';i++;}
+      else if(char==='"'){quoted=false;closed=true;}else tag+=char;
+    } else if(/[,;、]/.test(char)){tags.push(tag);tag='';closed=false;}
+    else if(closed){if(!/\s/.test(char))fail('FIELD_TYPE','引用符の後は区切り文字を入力してください。','tags');}
+    else if(char==='"'&&!tag.trim()){tag='';quoted=true;}
+    else tag+=char;
+  }
+  if(quoted)fail('FIELD_TYPE','タグの引用符を閉じてください。','tags');
+  tags.push(tag);return tags;
+}
 export function applyManualDraft(state,{id,values},createId=()=>crypto.randomUUID()) {
   const fields=validateFieldSettings(state.fieldSettings), visible=new Map(fields.filter(f=>f.visible).map(f=>[f.id,f]));
   if (!object(values)||Object.keys(values).some(key=>!visible.has(key))) fail('UNKNOWN_FIELD','表示していない項目は変更できません。');
@@ -112,7 +128,7 @@ export function applyManualDraft(state,{id,values},createId=()=>crypto.randomUUI
   const merged={...base,customValues:{...base.customValues}};
   for (const [key,value] of Object.entries(values)) {
     if (visible.get(key).kind==='text') merged.customValues[key]=value;
-    else if (key==='tags') { if(typeof value!=='string') fail('FIELD_TYPE','タグ入力が不正です。','tags'); merged.tags=value.split(/[,;、]/); }
+    else if (key==='tags') merged.tags=Array.isArray(value)?value:parseManualTags(value);
     else merged[key]=value;
   }
   const record=normalizedValue(merged,fields,'manual');

@@ -29,6 +29,21 @@ test('custom_definition_merge_preserves_existing_values',()=>{
   const on=plan(state,parsed,{applySettings:true});assert.equal(on.nextState.fieldSettings.at(-1).label,'ファイル側の名前');assert.deepEqual(on.nextState.stores.at(-1).customValues,state.stores[0].customValues);
   assert.deepEqual(state,snapshot);
 });
+test('settings_preview_compares_current_file_and_applied_values',()=>{
+  const state=fixtureState(1,{custom:true}),incoming=fixtureState(1,{custom:true});incoming.stores[0].name='追加店舗';
+  state.fieldSettings.at(-1).label='現在の名前';incoming.fieldSettings.at(-1).label='ファイルの名前';incoming.fieldSettings.at(-1).visible=false;
+  incoming.fieldSettings.find(f=>f.id==='genre').required=true;
+  const custom=incoming.fieldSettings.pop();incoming.fieldSettings.splice(1,0,custom);
+  const parsed=parse(referenceBackup(incoming));
+  for(const opts of [{},{applySettings:true},{mode:'restore',applySettings:true}]) {
+    const diff=plan(state,parsed,opts).fieldChanges.join('\n');
+    assert.match(diff,/現在の名前/);assert.match(diff,/ファイルの名前/);assert.match(diff,/表示ON/);assert.match(diff,/表示OFF/);
+    assert.match(diff,/必須ON/);assert.match(diff,/必須OFF/);assert.match(diff,/8番目/);assert.match(diff,/2番目/);assert.match(diff,/反映/);
+    if(!opts.applySettings)assert.match(diff,/現在の設定を維持/);
+  }
+  const currentOnly=plan(state,parse(referenceBackup(fixtureState())),{applySettings:true}).fieldChanges.join('\n');
+  assert.match(currentOnly,/現在の名前/);assert.match(currentOnly,/現在の設定を維持/);
+});
 test('unknown_custom_off_is_added_hidden_only_when_referenced',()=>{
   const incoming=fixtureState(1,{custom:true});incoming.stores[0].name='新規';
   const added=plan(fixtureState(),parse(referenceBackup(incoming)));assert.equal(added.nextState.fieldSettings.at(-1).id,CUSTOM_ID);assert.equal(added.nextState.fieldSettings.at(-1).visible,false);
