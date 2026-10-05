@@ -59,7 +59,13 @@ export function renderManualFields(container,settings,value) {
 export function readManualValues(form,settings) {
   const current=manualValues(form,settings),snapshot=manualSnapshots.get(form),values={};
   for(const [id,value] of Object.entries(current))if(!snapshot?.initial||JSON.stringify(value)!==JSON.stringify(snapshot.initial[id]))values[id]=value;
-  if(Object.hasOwn(values,'tags'))values.tags=parseManualTags(values.tags).map(tag=>snapshot?.tags.find(original=>original.replace(/\r\n?/g,'\n')===tag)??tag);
+  if(Object.hasOwn(values,'tags')) {
+    const remaining=[...(snapshot?.tags||[])];
+    values.tags=parseManualTags(values.tags).map(tag=>{
+      const index=remaining.findIndex(original=>original.replace(/\r\n?/g,'\n')===tag);
+      return index<0?tag:remaining.splice(index,1)[0];
+    });
+  }
   return values;
 }
 export function renderSettingsFields(container,draft,onChange) {
