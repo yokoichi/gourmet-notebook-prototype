@@ -33,3 +33,37 @@ CSVはname/title/店名の列が必須です。address、phone、genre、tags、
 依存パッケージは不要です。Node.js 20以降で`npm test`。表示はこのフォルダで`python3 -m http.server 8765 --bind 127.0.0.1`を実行し、`http://127.0.0.1:8765/`を開きます。
 
 GitHub Pagesはmainのルートを静的配信します。公開予定のURLは`https://yokoichi.github.io/gourmet-notebook-prototype/`です。購入や実アカウントの機能がある本番版ではありません。
+
+## CSV原本を保全して行別のローカル調査結果を受け取る
+
+別入口「CSVを保全して調査結果を受け取る」で、タイトル・メモ・URL・タグ・コメントが各1列のUTF-8 CSVを選びます。元バイト、SHA256、生の引用、コメント、未知列、元レコード番号・物理行範囲を研究作業に保持します。完全空セルの行は位置を保持し、空白だけの行や不正行は理由付きで残します。原本へ書き戻しません。
+
+1. 行ごとに新規登録・本人が確認した既存店舗・保留を選び、「選択した登録先で原値を登録」。共通URLだけで既存店舗へ自動対応しません。
+2. 「空欄を順次補完する」は初期OFFです。ONにした場合も、出典と店舗の地図IDを検算できた住所・電話・ジャンルの空欄だけを補完します。名前・元URL・メモ・元タグ・カスタム値・非空値・本人の編集と明示クリアは保護します。
+3. 要求JSONを保存します。各要求は公開店名と選択URLだけの投影です。メモ・コメント・タグ・電話・未知列を共有しません。ブラウザからエージェントや検索は起動せず、「結果待ち」のままです。共通promptと入力schemaを含み、受信するexchange v2は合成例 `examples/research-results-sample.json` と同じ全必須キーです。例のID・hashは合成要求専用で、本人の別要求には流用できません。
+4. 本人が信頼するローカル経路で作ったexchange v2または結果batch JSONを選びます。対応ID・入力hash・設定・共有原値・出典・観測日・項目根拠・店舗同定を各行で検算します。ブラウザは出典本文を取得しません。未署名ファイル内の出典は指定したローカル実行結果という信頼境界であり、当日の営業保証ではありません。
+5. 要確認は保留し、出典リンクを本人が明示的に開き、判断を記録するか手動編集へ進みます。推測分類は初期未選択で自動patchへ混ぜません。取消後の遅い結果・再試行前の古い要求・異なる同要求結果を拒否します。再試行も元の登録先を維持します。
+6. 再開には「作業backup」を保存します。原本・手帳・安定ID・要求履歴・結果・反映receiptを一緒に復元します。通常の店舗v2には研究来歴がありません。作業中の通常置換は研究作業の明示終了まで止めます。終了しても登録済み店舗は保持します。復元は現在の全内容の置換を確認した場合のみ可能です。
+
+研究作業全体と結果batchは16 MiB、各exchangeは64 KiB、要求＋共通promptは32 KiB、JSON深さ16、CSVは2 MiB・1,000候補・100列・セル10,000文字です。手帳の2,000店舗・8 MiB上限は別に検査し、一度の反映で手帳と台帳を同時に確定します。1件が失敗しても反映済みの他行は保持します。
+
+作業もメモリ内です。ダウンロード開始と保存成功は別なので保存を本人が確認してください。再読み込みで消えます。AI・Maps API・課金・認証・MCPの接続はなく、`connect-src 'none'`を維持します。個人のTakeoutデータや結果は公開repoへ置かないでください。
+
+## 指定した保存済み観測のローカル変換
+
+Node.js 20以降で、指定4入力だけから変換できます。外部通信・モデル起動・認証操作はありません。
+
+```sh
+node tools/convert-research-observations.mjs \
+  --requests /private/path/requests.json \
+  --observations /private/path/observations.json \
+  --evidence /private/path/evidence.json \
+  --notebook /private/path/notebook.json \
+  --output /private/path/result-batch.json
+```
+
+observationsは`sourceSha256`と`items`（各`sourceCsvRecordNumber,name,mapsURL,address,phone,genre,identity,sources`）、evidenceは同じ`sourceSha256`と`records`（各`sourceCsvRecordNumber,fieldEvidence,identity,sources`）を持つ本人指定の保存済みファイルです。要求はこの版の要求JSON、notebookはその時の店舗＋設定v2または内部stateです。原本hash＋元レコード番号＋元店名＋元URLが一致しない場合は変換しません。元の観測日を維持し、保存済み観測を新モデル応答・ライブ調査・旧envelopeのecho成功と数えません。出典URLの地図識別子を検算できない保存済み候補は補完値を空欄にして保留します。
+
+出力先は任意のGit worktreeの外に限り、symlink先も検査します。既存出力は上書きせず、専用temporaryから排他的に確定します。入力・旧出力は保持します。通常のv2入口へ解析packageやevidenceを直接取り込みません。
+
+検証はNodeの契約・controller・純粋ViewModel・static markupです。実ブラウザ操作、画面取得、モバイル表示・フォーカス・本人ダウンロード成功は検証していません。

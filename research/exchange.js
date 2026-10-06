@@ -17,7 +17,7 @@ export function verifyIdentity(identity,originalUrl,sources){
  if(!claimedOriginal||!(original.fid&&original.fid===claimedOriginal.fid||original.cid===claimedOriginal.cid))return false;
  const claimedPublic=decodedIdentifier(identity.method==='encoded_public_map_id'?'place_id:'+identity.publicIdentifier:identity.publicIdentifier.match(/^\d+$/)?'?cid='+identity.publicIdentifier:identity.publicIdentifier);
  if(!claimedPublic)return false;
- return identity.sourceIds.some(id=>{const source=sources.find(s=>s.id===id),found=source&&mapIdentifier(source.url);return found&&(found.fid&&original.fid===found.fid||found.cid===original.cid)&&(found.fid&&found.fid===claimedPublic.fid||found.cid===claimedPublic.cid);});
+ return identity.sourceIds.some(id=>{const source=sources.find(s=>s.id===id);if(!source)return false;const inUrl=mapIdentifier(source.url),found=inUrl??(['body','public_html','search_snippet','redirect_identifier'].includes(source.accessRoute)?decodedIdentifier(source.claim?.includes(identity.publicIdentifier)?(identity.method==='encoded_public_map_id'?'place_id:'+identity.publicIdentifier:identity.publicIdentifier.match(/^\d+$/)?'?cid='+identity.publicIdentifier:identity.publicIdentifier):''):null);return found&&(found.fid&&original.fid===found.fid||found.cid===original.cid)&&(found.fid&&found.fid===claimedPublic.fid||found.cid===claimedPublic.cid);});
 }
 export function parseResultFile(bytes,filename){
  if(typeof filename!=='string'||!filename.toLowerCase().endsWith('.json'))fail('RESULT_FILE','JSON結果を選択してください。');const obj=parseStrictJson(decodeUtf8(bytes,MAX_SESSION_BYTES),{maxBytes:MAX_SESSION_BYTES});

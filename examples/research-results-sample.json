@@ -1,0 +1,166 @@
+{
+  "format": "gourmet-notebook-ai-result-batch",
+  "schemaVersion": 1,
+  "exchanges": [
+    {
+      "format": "gourmet-notebook-ai-exchange",
+      "schemaVersion": 2,
+      "researchMode": "public_research",
+      "promptVersion": "public-research-shared-v1",
+      "requestId": "synthetic-4",
+      "workspaceId": "synthetic-3",
+      "candidateId": "synthetic-2",
+      "candidateRevision": 1,
+      "urlJobId": "synthetic-1",
+      "inputHash": "84e8a70bf04b7500c0cf6c79465d96d576c1ebeb2a7c4bb93ccf315f25101859",
+      "result": {
+        "restaurant": {
+          "name": "合成カフェ",
+          "genre": "カフェ",
+          "phone": "00-0000-0000",
+          "address": "架空県合成市1",
+          "tags": [],
+          "memo": "",
+          "urls": [
+            "https://www.google.com/maps/place/data=!4m2!3m1!1s0x1234:0xfedcba9876543210"
+          ],
+          "customValues": {}
+        },
+        "sourceRow": {
+          "fileSha256": "6c664576b380711fda14695d1a9ee6a2fbcf24818f2b41be4a798a3078c8ef60",
+          "csvRecordNumber": 2,
+          "physicalLineStart": 2,
+          "physicalLineEnd": 2,
+          "rawCsvRecord": "合成カフェ,,https://www.google.com/maps/place/data=!4m2!3m1!1s0x1234:0xfedcba9876543210,,",
+          "rawCells": [
+            "合成カフェ",
+            "",
+            "https://www.google.com/maps/place/data=!4m2!3m1!1s0x1234:0xfedcba9876543210",
+            "",
+            ""
+          ],
+          "columns": [
+            "タイトル",
+            "メモ",
+            "URL",
+            "タグ",
+            "コメント"
+          ],
+          "cellsByColumn": {
+            "タイトル": "合成カフェ",
+            "メモ": "",
+            "URL": "https://www.google.com/maps/place/data=!4m2!3m1!1s0x1234:0xfedcba9876543210",
+            "タグ": "",
+            "コメント": ""
+          }
+        },
+        "reviewDisposition": "retain",
+        "fieldEvidence": {
+          "name": {
+            "status": "copied_csv",
+            "sourceIds": [],
+            "sourceColumn": "タイトル",
+            "sourceLineStart": 2,
+            "sourceLineEnd": 2,
+            "rule": "",
+            "reason": ""
+          },
+          "genre": {
+            "status": "researched",
+            "sourceIds": [
+              "synthetic-official"
+            ],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          },
+          "phone": {
+            "status": "researched",
+            "sourceIds": [
+              "synthetic-official"
+            ],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          },
+          "address": {
+            "status": "researched",
+            "sourceIds": [
+              "synthetic-official"
+            ],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          },
+          "tags": {
+            "status": "unknown",
+            "sourceIds": [],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          },
+          "memo": {
+            "status": "unknown",
+            "sourceIds": [],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          },
+          "urls": {
+            "status": "copied_csv",
+            "sourceIds": [],
+            "sourceColumn": "URL",
+            "sourceLineStart": 2,
+            "sourceLineEnd": 2,
+            "rule": "",
+            "reason": ""
+          },
+          "customValues": {
+            "status": "unknown",
+            "sourceIds": [],
+            "sourceColumn": "",
+            "sourceLineStart": 0,
+            "sourceLineEnd": 0,
+            "rule": "",
+            "reason": ""
+          }
+        },
+        "unknownFields": [],
+        "classificationCandidates": [],
+        "needsReview": [],
+        "warnings": [],
+        "errors": [],
+        "identity": {
+          "status": "matched",
+          "method": "direct_map_id",
+          "sourceIds": [
+            "synthetic-official"
+          ],
+          "originalIdentifier": "0x1234:0xfedcba9876543210",
+          "publicIdentifier": "0x1234:0xfedcba9876543210",
+          "explanation": ""
+        },
+        "sources": [
+          {
+            "id": "synthetic-official",
+            "url": "https://www.google.com/maps/place/data=!4m2!3m1!1s0x1234:0xfedcba9876543210",
+            "title": "合成出典",
+            "observedAt": "2026-10-06",
+            "accessRoute": "body",
+            "claim": "合成施設の公開情報"
+          }
+        ]
+      }
+    }
+  ]
+}

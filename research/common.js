@@ -1,3 +1,12 @@
+/** @typedef {{fieldSettings:object[],stores:object[]}} NotebookState */
+/** @typedef {{filename:string,mediaType:string,byteLength:number,sha256:string,columns:string[],emptyRecords:object[],bytesBase64:string}} Source */
+/** @typedef {{recordId:string,fieldVersions:Record<string,number>,fieldValueHashes:Record<string,string>,protectedFields:string[]}} Binding */
+/** @typedef {{transport:Transport,settingsSnapshot:object[],createdAt:string,startedAt:string,status:string,resultHash:string}} Attempt */
+/** @typedef {{inputHash:string,request:object}} Transport */
+/** @typedef {{source:Source,workspaceId:string,runManifest:object,candidates:object[],recordBindings:Binding[],applicationReceipts:object[]}} ResearchSession */
+/** @typedef {{notebook:NotebookState,session:ResearchSession|null,revision:number}} Snapshot */
+/** @typedef {{baseRevision:number,nextNotebook:NotebookState,nextSession:ResearchSession|null,receipt:object,message:string}} Proposal */
+/** @typedef {Proposal & {notebookSerialized:object,sessionSerialized:string}} CommitEffect */
 export const VALUE_KEYS=['name','genre','phone','address','tags','memo','urls','customValues'];
 export const ELIGIBLE_FIELDS=['address','phone','genre'];
 export const MAX_SESSION_BYTES=16*1024*1024;
@@ -22,13 +31,13 @@ export function assertPublicUrl(value){
  let u;try{u=new URL(text);}catch{fail('URL','URLの形式が不正です。');}
  if(!['http:','https:'].includes(u.protocol)||u.username||u.password)fail('URL','認証情報なしのhttp/https URLだけです。');return text;
 }
-export function parseStrictJson(text,{maxBytes=MAX_SESSION_BYTES,maxDepth=16}={}){
+export function parseStrictJson(text,{maxBytes=MAX_SESSION_BYTES,maxDepth=16,allowNull=false}={}){
  if(typeof text!=='string'||byteLength(text)>maxBytes)fail('CAPACITY','JSON容量上限を超えています。');
  let p=0;const bad=()=>fail('JSON','JSONの形式・重複キー・深さを確認してください。');
  const space=()=>{while(/[ \r\n\t]/.test(text[p]??'x'))p++;};
  const string=()=>{const start=p++;while(p<text.length){const c=text[p++];if(c==='"'){try{return JSON.parse(text.slice(start,p));}catch{bad();}}if(c==='\\')p++;else if(c.charCodeAt(0)<32)bad();}bad();};
  const value=depth=>{space();const c=text[p];if(c==='{'||c==='['){if(depth>=maxDepth)bad();p++;space();const object=c==='{',end=object?'}':']',out=object?{}:[],seen=new Set();if(text[p]===end){p++;return out;}while(true){if(object){if(text[p]!=='"')bad();const key=string();if(seen.has(key))bad();seen.add(key);space();if(text[p++]!==':')bad();const v=value(depth+1);Object.defineProperty(out,key,{value:v,enumerable:true,writable:true,configurable:true});}else out.push(value(depth+1));space();if(text[p]===end){p++;return out;}if(text[p++]!==',')bad();space();}}
- if(c==='"')return string();for(const [lit,v]of[['true',true],['false',false]])if(text.startsWith(lit,p)){p+=lit.length;return v;}
+ if(c==='"')return string();if(allowNull&&text.startsWith('null',p)){p+=4;return null;}for(const [lit,v]of[['true',true],['false',false]])if(text.startsWith(lit,p)){p+=lit.length;return v;}
  const match=text.slice(p).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);if(!match)bad();p+=match[0].length;const n=Number(match[0]);if(!Number.isFinite(n))bad();return n;};
  const result=value(0);space();if(p!==text.length)bad();return result;
 }
