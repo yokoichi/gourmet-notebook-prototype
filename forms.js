@@ -56,7 +56,7 @@ export function renderManualFields(container,settings,value) {
   }
   const form=container.closest('form');
   manualSnapshots.set(form,{initial:value?manualValues(form,settings):null,tags:value?.tags||[],settings,touched:new Set()});
-  if(!trackedForms.has(form)){const touch=event=>{const id=event.target.closest('[data-field-id]')?.dataset.fieldId;if(id)manualSnapshots.get(form)?.touched.add(id);};form.addEventListener('input',touch);form.addEventListener('click',event=>{if(event.target.closest('button'))touch(event);});trackedForms.add(form);}
+  if(!trackedForms.has(form)){const touch=event=>{const id=event.target.closest('[data-field-id]')?.dataset.fieldId;if(id)manualSnapshots.get(form)?.touched.add(id);};form.addEventListener('input',touch);form.addEventListener('keydown',event=>{if(['Backspace','Delete'].includes(event.key)&&event.target.matches('input,textarea')&&!event.target.value.trim())touch(event);});form.addEventListener('beforeinput',event=>{if(event.inputType?.startsWith('delete')&&event.target.matches('input,textarea')&&!event.target.value.trim())touch(event);});form.addEventListener('click',event=>{if(event.target.closest('button'))touch(event);});trackedForms.add(form);}
 }
 export function readManualValues(form,settings) {
   const current=manualValues(form,settings),snapshot=manualSnapshots.get(form),values={};

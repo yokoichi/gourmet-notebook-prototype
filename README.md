@@ -66,6 +66,8 @@ observationsは`sourceSha256`と`items`（各`sourceCsvRecordNumber,name,mapsURL
 
 出力先は任意のGit worktreeの外に限り、symlink先も検査します。既存出力は上書きせず、専用temporaryから排他的に確定します。入力・旧出力は保持します。通常のv2入口へ解析packageやevidenceを直接取り込みません。
 
-検証はNodeの契約・controller・純粋ViewModel・static markupです。実ブラウザ操作、画面取得、モバイル表示・フォーカス・本人ダウンロード成功は検証していません。
+検証はNodeの契約・controller・純粋ViewModel・static markupに加え、Chromeの正式headless DOMで合成データの8操作フローを確認しています。CSV→行別結果→確認反映、手入力保護、取消と明示再試行、古い結果と重複の拒否、エラー回復、読込中の終了、作業backupと通常v2 JSONの往復が対象です。ブラウザのダウンロードを一時ファイルへ保存してJSONも照合します。画面取得・録画・CUA・外部ページアクセスは使いません。見た目、実機Safari/iOS、実際の利用者の保存操作は未検証です。
+
+開発環境にPython PlaywrightとGoogle Chromeがすでにある場合は、`python3 tools/verify-headless-dom.py`でこの任意の操作検証を再実行できます。製品に追加依存はありません。各テストは独立した一時ブラウザ環境とlocalhostサーバを使い、外部ページ要求を遮断します。
 
 保留は本人の出典確認記録で解除できますが、同定未確認・出典矛盾・手入力保護の条件は解除しません。普通の要求保存は有効要求の再保存か未開始行だけを対象とし、取消・失効した行は行別の明示再試行が必要です。共有URLや原値の重複候補は登録前に表示します。保存済みのneedsReview・warnings・不明を保持し、複合した旧取得経路は元の経路名もwarningに残します。CLIの最終出力はcompact JSONの実UTF-8バイト数で検査します。
