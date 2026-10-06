@@ -7,7 +7,7 @@ export function findCandidate(session,id){const c=session.candidates.find(c=>c.i
 export async function makeBinding(store){const v=restaurantValue(store);return {recordId:store.id,fieldVersions:Object.fromEntries(VALUE_KEYS.map(k=>[k,0])),fieldValueHashes:Object.fromEntries(await Promise.all(VALUE_KEYS.map(async k=>[k,await hashValue(v[k])]))),protectedFields:[]};}
 export async function createResearchSession(notebook,extracted,deps=depsDefault){
  serializeState(notebook);const {createId,now}=deps;const candidates=[];
- for(const e of extracted.candidates){const urlJobs=[];for(const url of e.baseRestaurant.urls)urlJobs.push({id:createId(),url,urlHash:await hashValue(url),status:e.status,activeRequestId:'',attempts:[]});candidates.push({...clone(e),id:createId(),revision:0,activeRequest:{},result:{},review:{applyStatus:'unapplied',identityChecks:[],requestBindings:{}},urlJobs,targetRecordId:'',history:[],rawReceipt:{}});}
+ for(const e of extracted.candidates){const urlJobs=[];for(const url of e.baseRestaurant.urls)urlJobs.push({id:createId(),url,urlHash:await hashValue(url),status:e.status,activeRequestId:'',attempts:[]});candidates.push({...clone(e),id:createId(),revision:0,activeRequest:{},result:{},review:{applyStatus:'unapplied',identityChecks:[],requestBindings:{},results:{}},urlJobs,targetRecordId:'',history:[],rawReceipt:{}});}
  return {source:clone(extracted.source),workspaceId:createId(),runManifest:{kind:'local-json-exchange',createdAt:now(),promptVersion:PUBLIC_RESEARCH_PROMPT_VERSION,promptHash:await hashValue(PUBLIC_RESEARCH_PROMPT),applyPolicy:{revision:0,allowSequential:false,allowedFields:[],confirmedAt:''}},candidates,recordBindings:await Promise.all(notebook.stores.map(makeBinding)),applicationReceipts:[]};
 }
 export async function prepareRequest(session,candidateId,urlJobId,fieldSettings,deps=depsDefault){
@@ -29,7 +29,7 @@ export function bindCandidateTarget(session,id,recordId){const next=clone(sessio
 export function assertActive(session,c,exchange){const a=c.activeRequest,j=c.urlJobs.find(j=>j.id===exchange.urlJobId);if(exchange.workspaceId!==session.workspaceId||exchange.candidateId!==c.id||exchange.candidateRevision!==c.revision||!a.transport||a.transport.request.requestId!==exchange.requestId||a.transport.inputHash!==exchange.inputHash||!j||j.activeRequestId!==exchange.requestId||c.status==='cancelled')fail('STALE','取消済み・古い・別作業の結果です。');}
 export function acceptResearchResult(session,validated,{now=depsDefault.now}={}){
  const next=clone(session),e=validated.exchange,c=findCandidate(next,e.candidateId);assertActive(next,c,e);const previous=c.activeRequest.resultHash;if(previous){if(previous!==validated.resultHash)fail('RESULT_CONFLICT','同じ要求に異なる結果が届きました。');return next;}
- c.result=clone(validated);c.status=validated.identityVerified?'confirmed':'needs_review';c.review.receivedAt=now();c.activeRequest.status=c.status;c.activeRequest.resultHash=validated.resultHash;
+ c.result=clone(validated);c.review.results[e.requestId]=clone(validated);c.status=validated.identityVerified?'confirmed':'needs_review';c.review.receivedAt=now();c.activeRequest.status=c.status;c.activeRequest.resultHash=validated.resultHash;
  const j=c.urlJobs.find(j=>j.id===e.urlJobId);j.status=c.status;for(const a of [...c.history,...j.attempts])if(a.transport.request.requestId===e.requestId){a.status=c.status;a.resultHash=validated.resultHash;}
  return next;
 }
