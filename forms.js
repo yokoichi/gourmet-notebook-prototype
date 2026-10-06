@@ -96,6 +96,11 @@ export function renderSettingsFields(container,draft,onChange) {
 
 export function readManualIntent(form){
  const snapshot=manualSnapshots.get(form);if(!snapshot)return {changedFields:[],clearedFields:[]};
- const current=manualValues(form,snapshot.settings),changedFields=[...new Set([...snapshot.touched,...Object.keys(current).filter(k=>!snapshot.initial||JSON.stringify(current[k])!==JSON.stringify(snapshot.initial[k]))])];
- return {changedFields,clearedFields:changedFields.filter(k=>Array.isArray(current[k])?current[k].every(v=>!v.trim()):!current[k].trim())};
+ return deriveManualIntent(snapshot,manualValues(form,snapshot.settings));
+}
+
+export function deriveManualIntent(snapshot,current){
+ const blank=v=>Array.isArray(v)?v.every(x=>!x.trim()):!v.trim();
+ const changedFields=[...new Set([...snapshot.touched,...Object.keys(current).filter(k=>snapshot.initial?JSON.stringify(current[k])!==JSON.stringify(snapshot.initial[k]):!blank(current[k]))])];
+ return {changedFields,clearedFields:changedFields.filter(k=>blank(current[k]))};
 }

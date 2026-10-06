@@ -67,3 +67,5 @@ observationsは`sourceSha256`と`items`（各`sourceCsvRecordNumber,name,mapsURL
 出力先は任意のGit worktreeの外に限り、symlink先も検査します。既存出力は上書きせず、専用temporaryから排他的に確定します。入力・旧出力は保持します。通常のv2入口へ解析packageやevidenceを直接取り込みません。
 
 検証はNodeの契約・controller・純粋ViewModel・static markupです。実ブラウザ操作、画面取得、モバイル表示・フォーカス・本人ダウンロード成功は検証していません。
+
+保留は本人の出典確認記録で解除できますが、同定未確認・出典矛盾・手入力保護の条件は解除しません。普通の要求保存は有効要求の再保存か未開始行だけを対象とし、取消・失効した行は行別の明示再試行が必要です。共有URLや原値の重複候補は登録前に表示します。保存済みのneedsReview・warnings・不明を保持し、複合した旧取得経路は元の経路名もwarningに残します。CLIの最終出力はcompact JSONの実UTF-8バイト数で検査します。
