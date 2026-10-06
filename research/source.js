@@ -1,12 +1,12 @@
 import {normalizeRestaurant,parseManualTags} from '../model.js';
-import {fail,decodeUtf8,sha256Bytes,encodeBase64,assertPublicUrl,clone} from './common.js';
+import {fail,decodeUtf8,sha256Bytes,encodeBase64,assertPublicUrl,clone,byteLength,MAX_SESSION_BYTES} from './common.js';
 export const SHARED_COLUMNS=['タイトル','メモ','URL','タグ','コメント'];
 export const MAX_SOURCE_BYTES=2*1024*1024;
 const csvCell=s=>/[",\r\n]/.test(s)?'"'+s.replaceAll('"','""')+'"':s;
 export function scanCsv(text){
- const records=[];let start=0,startLine=1,line=1,cells=[],rawCells=[],cell='',cellStart=0,quoted=false,closed=false,atStart=true;
+ const records=[];let start=0,startLine=1,line=1,cells=[],rawCells=[],cell='',cellStart=0,quoted=false,closed=false,atStart=true,recordBytes=0;
  const finishCell=end=>{if(cell.length>10000)fail('CSV_CELL','セルは10,000文字までです。');cells.push(cell);rawCells.push(text.slice(cellStart,end));if(cells.length>100)fail('CSV_COLUMNS','列は100列までです。');cell='';quoted=false;closed=false;atStart=true;};
- const finishRecord=end=>{finishCell(end);records.push({csvRecordNumber:records.length+1,physicalLineStart:startLine,physicalLineEnd:line,rawCsvRecord:text.slice(start,end),rawCells,cells});cells=[];rawCells=[];};
+ const finishRecord=end=>{finishCell(end);const record={csvRecordNumber:records.length+1,physicalLineStart:startLine,physicalLineEnd:line,rawCsvRecord:text.slice(start,end),rawCells,cells};recordBytes+=byteLength(JSON.stringify(record));if(recordBytes>MAX_SESSION_BYTES)fail('SESSION_CAPACITY','空行位置を含む原本表現が16 MiBを超えます。');records.push(record);cells=[];rawCells=[];};
  for(let i=0;i<text.length;i++){
   const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"'){quoted=false;closed=true;}else{cell+=c;if(c==='\r'){if(text[i+1]==='\n')cell+=text[++i];line++;}else if(c==='\n')line++;}}
   else if(c===','){finishCell(i);cellStart=i+1;}
@@ -24,7 +24,7 @@ export async function readResearchCsv(bytes,filename,fieldSettings){
  if(SHARED_COLUMNS.some(k=>columns.filter(c=>c===k).length!==1)||new Set(columns).size!==columns.length)fail('CSV_HEADER','タイトル・メモ・URL・タグ・コメントが各1列必要です。');
  const fileSha256=await sha256Bytes(bytes),emptyRecords=[],candidates=[];
  for(const record of records.slice(1)){
-  if(record.rawCsvRecord===''){emptyRecords.push(record);continue;}
+  if(record.cells.every(cell=>cell==='')){emptyRecords.push(record);continue;}
   if(candidates.length>=1000)fail('CSV_ROWS','候補は1,000件までです。');
   const {cells,...raw}=record,cellsByColumn=Object.fromEntries(SHARED_COLUMNS.map(k=>[k,cells[columns.indexOf(k)]??'']));
   const sourceRow={fileSha256,...raw,columns:[...columns],cellsByColumn};

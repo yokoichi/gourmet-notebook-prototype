@@ -9,7 +9,7 @@ async function receipt(session,c,requestId,before,after,patch){return {workspace
 export async function prepareRawRegistration(snapshot,decisions,deps){
  const notebook=clone(snapshot.notebook),session=clone(snapshot.session);let latest={};
  for(const [id,decision]of Object.entries(decisions)){
-  const c=findCandidate(session,id);if(c.targetRecordId)continue;if(!['new','existing','hold'].includes(decision.mode))fail('DECISION','新規・既存・保留を選択してください。');if(decision.mode==='hold'){c.review.applyStatus='held';continue;}
+  const c=findCandidate(session,id);if(c.targetRecordId){if(c.review.targetNeedsConfirmation&&decision.mode==='existing'&&decision.recordId===c.targetRecordId)c.review.targetNeedsConfirmation=false;continue;}if(!['new','existing','hold'].includes(decision.mode))fail('DECISION','新規・既存・保留を選択してください。');if(decision.mode==='hold'){c.review.applyStatus='held';continue;}
   if(c.status==='invalid')fail('INVALID_ROW','不正行を登録できません。');let store;
   if(decision.mode==='new'){store={...normalizeRestaurant(c.baseRestaurant,notebook.fieldSettings),id:deps.createId(),source:'CSV原値',icon:'◌',tone:'green'};notebook.stores.push(store);session.recordBindings.push(await makeBinding(store));}
   else{store=notebook.stores.find(s=>s.id===decision.recordId);if(!store)fail('TARGET','既存店舗がありません。');}
@@ -23,7 +23,7 @@ export function previewResultApplication(snapshot,id,validated){
  const c=findCandidate(snapshot.session,id),e=validated.exchange,patch={},blockedFields=[],reasons=[];assertActive(snapshot.session,c,e);
  const store=snapshot.notebook.stores.find(s=>s.id===c.targetRecordId),binding=snapshot.session.recordBindings.find(b=>b.recordId===c.targetRecordId),captured=c.review.requestBindings[e.requestId];
  if(!store||!binding||!captured)return {patch,blockedFields:[...ELIGIBLE_FIELDS],reasons:['最初に登録先を確認してください。'],targetRecordId:c.targetRecordId};
- if(!validated.identityVerified||e.result.needsReview.length||c.review.applyStatus==='held')return {patch,blockedFields:[...ELIGIBLE_FIELDS],reasons:['店舗同定・要確認項目を確認してください。自動補完は保留です。'],targetRecordId:c.targetRecordId};
+ if(!validated.identityVerified||e.result.needsReview.length||c.review.applyStatus==='held'||c.review.targetNeedsConfirmation)return {patch,blockedFields:[...ELIGIBLE_FIELDS],reasons:['店舗同定・要確認項目を確認してください。自動補完は保留です。'],targetRecordId:c.targetRecordId};
  for(const k of ELIGIBLE_FIELDS){if(!validated.eligibleFields.includes(k))continue;if(store[k]!==''||binding.protectedFields.includes(k)||binding.fieldVersions[k]!==captured.fieldVersions[k]||binding.fieldValueHashes[k]!==captured.fieldValueHashes[k]){blockedFields.push(k);reasons.push(`${k}: 原値・手入力・明示クリアを保護しました。`);}else patch[k]=e.result.restaurant[k];}
  return {patch,blockedFields,reasons,targetRecordId:c.targetRecordId};
 }
@@ -33,7 +33,7 @@ export async function prepareResultApplication(snapshot,id,validated,{mode='manu
  if(!['manual','sequential'].includes(mode)||!Array.isArray(selectedFields)||selectedFields.some(k=>!ELIGIBLE_FIELDS.includes(k)))fail('APPLY_MODE','反映項目を確認してください。');
  const policy=snapshot.session.runManifest.applyPolicy;if(mode==='sequential'&&!policy.allowSequential)fail('POLICY','順次補完方針が未許可です。');
  if(await hashValue(snapshot.notebook.fieldSettings)!==original.activeRequest.transport.request.settingsHash)fail('SETTINGS_STALE','要求後に項目設定が変わりました。');
- const preview=previewResultApplication(snapshot,id,validated);if(!validated.identityVerified||e.result.needsReview.length||original.review.applyStatus==='held')fail('IDENTITY_HOLD','同定・出典の要確認を保留しました。');
+ const preview=previewResultApplication(snapshot,id,validated);if(!validated.identityVerified||e.result.needsReview.length||original.review.applyStatus==='held'||original.review.targetNeedsConfirmation)fail('IDENTITY_HOLD','同定・出典の要確認を保留しました。');
  const patch=Object.fromEntries(Object.entries(preview.patch).filter(([k])=>mode==='sequential'?policy.allowedFields.includes(k):selectedFields.includes(k)));
  let session=acceptResearchResult(snapshot.session,validated,deps),notebook=clone(snapshot.notebook),c=findCandidate(session,id);if(!Object.keys(patch).length)return {baseRevision:snapshot.revision,nextNotebook:notebook,nextSession:session,receipt:{},message:preview.reasons.join(' ')||'補完可能な空欄はありません。'};
  const index=notebook.stores.findIndex(s=>s.id===c.targetRecordId),binding=session.recordBindings.find(b=>b.recordId===c.targetRecordId),before=clone(binding);if(index<0)fail('TARGET','登録先がありません。');

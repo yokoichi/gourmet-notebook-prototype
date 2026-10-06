@@ -1,7 +1,9 @@
 import { decodeImportFile, parseImport, prepareImport, ticketsFor, MAX_BYTES } from './importer.js';
 import { defaultFieldSettings, resetFieldSettings, serializeState, applyManualDraft, applyFieldSettings, MAX_JSON_BYTES, MAX_CUSTOM_FIELDS } from './model.js';
-import { renderManualFields, readManualValues, renderSettingsFields } from './forms.js';
+import { renderManualFields, readManualValues, readManualIntent, renderSettingsFields } from './forms.js';
 import { samples } from './samples.js';
+import { createResearchController } from './research/controller.js';
+import { mountResearchUI } from './research/ui.js';
 
 const $ = selector => document.querySelector(selector);
 const element = (tag, className = '', text = '') => {
@@ -15,6 +17,10 @@ let serialized = serializeState(state), stateRevision = 0;
 let filter = '', dirty = false, preview = null, parsed = null, fileGeneration = 0, previewRevision = -1;
 let manualId = null, settingsDraft = null, submitting = false;
 const dialogOrigins = new Map();
+let researchSession=null,researchUI;
+const readSnapshot=()=>({notebook:state,session:researchSession,revision:stateRevision});
+const researchController=createResearchController({readSnapshot,commitEffect:effect=>{if(effect.baseRevision!==stateRevision)return false;state=effect.nextNotebook;researchSession=effect.nextSession;serialized=effect.notebookSerialized;stateRevision++;dirty=true;render();researchUI?.render();return true;}});
+async function commitNotebook(result,intent,redraw=true){if(researchSession)await researchController.reconcileNotebook(result.nextState,intent);else commitState(result,redraw);}
 
 function render() {
   const stores = state.stores;
@@ -87,14 +93,14 @@ function openManual(store = null) {
 }
 
 $('#add-button').addEventListener('click', () => openManual());
-$('#manual-form').addEventListener('submit', event => {
+$('#manual-form').addEventListener('submit', async event => {
   event.preventDefault();
   if(submitting||!$('#manual-dialog').open)return;
   submitting=true;$('#manual-error').textContent='';
   $('#manual-form').querySelectorAll('[aria-invalid]').forEach(input=>input.removeAttribute('aria-invalid'));
   try {
     const result=applyManualDraft(state,{id:manualId,values:readManualValues(event.currentTarget,state.fieldSettings)});
-    commitState(result);$('#manual-dialog').close();announce('この画面内だけで保持しています。必要なら店舗＋設定のJSONを書き出してください。');
+    await commitNotebook(result,{kind:'manual',recordId:manualId,...readManualIntent(event.currentTarget)});$('#manual-dialog').close();announce('この画面内だけで保持しています。必要なら店舗＋設定のJSONを書き出してください。');
   } catch (error) { formError('#manual-error',error); }
   finally {submitting=false;}
 });
@@ -119,11 +125,12 @@ $('#add-custom-field').addEventListener('click',()=>{
   $('#settings-fields').querySelector(`[data-field-id="${id}"] input`).focus();
 });
 $('#reset-field-settings').addEventListener('click',()=>{
-  try{settingsChanged(resetFieldSettings(settingsDraft),{redraw:true});$('#settings-error').textContent='';$('#settings-feedback').textContent='標準の表示に戻しました。カスタム定義と店舗の値は保持します。';}catch(error){formError('#settings-error',error);}
+  try{settingsChanged(resetFieldSettings(settingsDraft),{redraw:true});$('#settings-error').textContent='';$('#settings-feedback').textContent='標準の表示に戻しました。カスタム定義と店舗の値は保持します。';}catch(error){formError('#settings-error',error);}finally{submitting=false;}
 });
-$('#settings-form').addEventListener('submit',event=>{
+$('#settings-form').addEventListener('submit',async event=>{
   event.preventDefault();if(!$('#settings-dialog').open)return;
-  try{commitState(applyFieldSettings(state,settingsDraft),false);$('#settings-dialog').close();announce('項目設定をこの画面内に適用しました。再読み込みで消えます。');}catch(error){formError('#settings-error',error);}
+  if(submitting)return;submitting=true;
+  try{await commitNotebook(applyFieldSettings(state,settingsDraft),{kind:'settings'},false);$('#settings-dialog').close();announce('項目設定をこの画面内に適用しました。再読み込みで消えます。');}catch(error){formError('#settings-error',error);}finally{submitting=false;}
 });
 
 $('#search').addEventListener('input', render); $('#sort').addEventListener('change', render);
@@ -169,17 +176,17 @@ $('#file-input').addEventListener('change', async event => {
     const csv=/\.csv$/i.test(file.name);if(file.size>(csv?MAX_BYTES:MAX_JSON_BYTES))throw new Error(`${csv?'CSVは2':'JSONは8'} MiBまでです。`);
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (generation !== fileGeneration || !$('#import-dialog').open) return;
-    parsed=parseImport(decodeImportFile(bytes,file.name),file.name);$('#import-mode option[value=restore]').disabled=parsed.format!=='backup-v2';updatePreview();
+    parsed=parseImport(decodeImportFile(bytes,file.name),file.name);$('#import-mode option[value=restore]').disabled=parsed.format!=='backup-v2'||!!researchSession;updatePreview();
   } catch (error) { if (generation === fileGeneration) { resetPreview(); $('#import-error').textContent = error.message; } }
 });
-$('#commit-import').addEventListener('click', () => {
+$('#commit-import').addEventListener('click', async () => {
   if(submitting||!parsed||!preview?.nextState||!$('#import-dialog').open)return;
   if(previewRevision!==stateRevision){$('#restore-confirm').checked=false;updatePreview();announce('手帳が変わったため、再度プレビューを確認してください。');return;}
-  const options=importOptions();if(options.mode==='restore'&&!$('#restore-confirm').checked)return;
+  const options=importOptions();if(options.mode==='restore'&&researchSession){$('#import-error').textContent='作業backupを保存して研究作業を明示終了してから、店舗と設定を置換してください。';return;}if(options.mode==='restore'&&!$('#restore-confirm').checked)return;
   submitting=true;$('#commit-import').disabled=true;
   try {
     const candidate=prepareImport(state,parsed,options);if(!candidate.nextState)throw new Error(candidate.error);
-    commitState(candidate);$('#import-dialog').close();announce('店舗と設定をこの画面内に反映しました。元ファイルは変更していません。再読み込みで消えます。');
+    await commitNotebook(candidate,{kind:options.applySettings?'settings':'append'});$('#import-dialog').close();announce('店舗と設定をこの画面内に反映しました。元ファイルは変更していません。再読み込みで消えます。');
   } catch(error){$('#import-error').textContent=error.message;}finally{submitting=false;}
 });
 
@@ -205,3 +212,7 @@ $('#classification-button').addEventListener('click', () => { updateEstimate(); 
 $('#about-button').addEventListener('click', () => openDialog('about-dialog'));
 window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
 render();
+
+researchUI=mountResearchUI({document,controller:researchController,readSnapshot,announce});
+$('#research-button').addEventListener('click',()=>{researchUI.render();openDialog('research-dialog');});
+document.addEventListener('research-edit',event=>{const store=state.stores.find(s=>s.id===event.detail.recordId);if(store)openManual(store);});

@@ -20,3 +20,8 @@ test('invalid CSV and encoding fail; malformed rows remain reviewable; limits ar
  await assert.rejects(m.readResearchCsv(sourceBytes(Array(1001).fill('店,,'+MAP_URL+',,').join('\n')),'x.csv',fixtureSettings()));
  await assert.rejects(m.readResearchCsv(sourceBytes('店,'+'x'.repeat(10001)+',,, '),'x.csv',fixtureSettings()));
 });
+test('fully empty cells are excluded and column/cell boundaries are enforced',async()=>{
+ const p=await m.readResearchCsv(sourceBytes(',,,,\n ,,,,'),'synthetic.csv',fixtureSettings());assert.equal(p.source.emptyRecords.length,1);assert.equal(p.candidates.length,1);assert.equal(p.candidates[0].status,'invalid');
+ const headers=['タイトル','メモ','URL','タグ','コメント',...Array.from({length:95},(_,i)=>'unknown'+i)];const row=['店','',MAP_URL,'','',...Array(95).fill('x'.repeat(10000))];assert.equal((await m.readResearchCsv(new TextEncoder().encode(headers.join(',')+'\n'+row.join(',')),'s.csv',fixtureSettings())).source.columns.length,100);
+ await assert.rejects(m.readResearchCsv(new TextEncoder().encode([...headers,'extra'].join(',')+'\n'+[...row,''].join(',')),'s.csv',fixtureSettings()));
+});

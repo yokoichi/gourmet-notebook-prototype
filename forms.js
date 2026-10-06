@@ -1,6 +1,7 @@
 import { BUILTIN_LABELS, FIELD_LIMITS, parseManualTags } from './model.js';
 
 const manualSnapshots=new WeakMap();
+const trackedForms=new WeakSet();
 const formatTags=tags=>tags.map(tag=>/[",;、\r\n]/.test(tag)?'"'+tag.replaceAll('"','""')+'"':tag).join(', ');
 function manualValues(form,settings) {
   return Object.fromEntries(settings.filter(f=>f.visible).map(field=>[field.id,field.id==='urls'?[...form.querySelectorAll('.url-input')].map(input=>input.value):form.elements.namedItem(field.id).value]));
@@ -54,7 +55,8 @@ export function renderManualFields(container,settings,value) {
     container.append(group);
   }
   const form=container.closest('form');
-  manualSnapshots.set(form,{initial:value?manualValues(form,settings):null,tags:value?.tags||[]});
+  manualSnapshots.set(form,{initial:value?manualValues(form,settings):null,tags:value?.tags||[],settings,touched:new Set()});
+  if(!trackedForms.has(form)){const touch=event=>{const id=event.target.closest('[data-field-id]')?.dataset.fieldId;if(id)manualSnapshots.get(form)?.touched.add(id);};form.addEventListener('input',touch);form.addEventListener('click',event=>{if(event.target.closest('button'))touch(event);});trackedForms.add(form);}
 }
 export function readManualValues(form,settings) {
   const current=manualValues(form,settings),snapshot=manualSnapshots.get(form),values={};
@@ -90,4 +92,10 @@ export function renderSettingsFields(container,draft,onChange) {
     }
     controls.append(moves);row.append(controls);container.append(row);
   });
+}
+
+export function readManualIntent(form){
+ const snapshot=manualSnapshots.get(form);if(!snapshot)return {changedFields:[],clearedFields:[]};
+ const current=manualValues(form,snapshot.settings),changedFields=[...new Set([...snapshot.touched,...Object.keys(current).filter(k=>!snapshot.initial||JSON.stringify(current[k])!==JSON.stringify(snapshot.initial[k]))])];
+ return {changedFields,clearedFields:changedFields.filter(k=>Array.isArray(current[k])?current[k].every(v=>!v.trim()):!current[k].trim())};
 }

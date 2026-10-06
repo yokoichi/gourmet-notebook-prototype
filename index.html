@@ -34,6 +34,7 @@
       <div id="restaurant-grid" class="restaurant-grid"></div>
       <div id="empty-state" class="empty-state" hidden><span aria-hidden="true">◌</span><h3>まだ、見つかっていない一軒。</h3><p>検索条件を変えるか、新しいお店を追加してみましょう。</p><button id="clear-search" class="outline-button" type="button">絞り込みを解除</button></div>
     </section>
+    <p><button id="research-button" class="outline-button" type="button">CSVを保全して調査結果を受け取る</button></p>
     <section class="classification-section" aria-labelledby="classification-title"><div><p class="eyebrow">A LITTLE MORE ORGANIZED</p><h2 id="classification-title">ジャンルから、次のお店へ。</h2><p>サンプルの分類例と、100店舗ごとのチケット見積を確認できます。<br>AI処理・チケット購入や消費は行いません。</p></div><div class="demo-panel"><div class="demo-balance"><span>デモ残数</span><strong>5 <small>枚</small></strong></div><button id="classification-button" class="primary-button" type="button">サンプル分類例を見る <span aria-hidden="true">→</span></button></div></section>
     <p id="status" class="status" role="status" aria-live="polite"></p>
   </main>
@@ -79,5 +80,20 @@
   <dialog id="classification-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">CLASSIFICATION EXAMPLE</p><h2>サンプル分類例</h2></div><button class="close-button" type="button" data-close="classification-dialog" aria-label="閉じる">×</button></div><p class="dialog-description">合成サンプルに用意した分類例です。取り込んだ店名やメモをAIへ送信・分類していません。</p><div class="classification-example"><span>ひだまり珈琲（サンプル）</span><strong>カフェ</strong><span class="tag">コーヒー</span><span class="tag">ひとり時間</span></div><label class="estimate-field">見積例の店舗数<input id="estimate-count" type="number" min="0" max="1000" step="1" value="100"></label><p id="estimate-result" class="estimate-result"></p><p class="preview-help">100店舗ごとに切り上げ。見積例だけで、予約・消費はありません。</p><div class="dialog-actions"><button class="primary-button" type="button" data-close="classification-dialog">手帳に戻る</button></div></dialog>
 
   <dialog id="about-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">ABOUT THIS PROTOTYPE</p><h2>安心して試すために</h2></div><button class="close-button" type="button" data-close="about-dialog" aria-label="閉じる">×</button></div><div class="about-copy"><p>これは操作感を確かめる静的プロトタイプです。最初のお店はすべて合成サンプルです。</p><p>入力・取り込みはブラウザのメモリ内のみで扱い、ページを再読み込みすると消えます。店舗と項目設定はJSONを書き出して手元に保存してください。</p><p>選択ファイル・店名・メモは外部へ送信しません。ページ自体の取得通信は発生し、GitHub Pages側にはアクセスに関する記録が残る場合があります。</p><p>アカウント共通の店舗リスト・残高、ZIP対応、AI分類、チケット購入は今後の機能です。この試作にはログイン、同期、実API呼び出し、決済、分析タグがありません。</p><p>分析プロンプトはローカルで検討してからサービスへ反映します。このページからAIへ送信することはありません。</p></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="about-dialog">わかりました</button></div></dialog>
+
+  <dialog id="research-dialog" class="dialog research-dialog" aria-labelledby="research-title">
+    <div class="dialog-heading"><h2 id="research-title">CSV原本と行別調査結果</h2><button class="close-button" type="button" data-close="research-dialog" aria-label="閉じる">×</button></div>
+    <p id="research-notice" class="dialog-description"></p>
+    <p class="preview-help">共有範囲は対象1件の公開店名・URLのみ。元メモ・タグ・コメント・電話や一覧を外部検索へ送りません。未知列は原本内に保持します。</p>
+    <label class="research-file-label">原本を保持するUTF-8 CSV（2 MiBまで）<input id="research-csv" type="file" accept=".csv,text/csv"></label>
+    <label class="check-label"><input id="research-policy" type="checkbox">出典・同定を検算した結果から住所・電話・ジャンルの空欄を順次補完する（初期OFF）</label>
+    <p id="research-counts" class="preview-help"></p>
+    <p id="research-status" aria-live="polite" role="status"></p>
+    <div id="research-rows"></div>
+    <div class="research-actions"><button id="research-confirm-raw" class="primary-button" type="button">選択した登録先で原値を登録</button><button id="research-requests" class="outline-button" type="button">公開名称・URLの要求JSONを保存</button><button id="research-backup" class="outline-button" type="button">作業backupを保存</button></div>
+    <label class="research-file-label">ローカル調査結果JSONを受け取る（16 MiBまで・各結果64 KiB）<input id="research-result-file" type="file" accept=".json,application/json"></label>
+    <div class="restore-section"><p>作業backupの復元は現在の店舗・設定・研究作業を置換します。通常の店舗v2にはID・出典・反映台帳が含まれません。</p><label class="check-label"><input id="research-replace-confirm" type="checkbox">必要なbackupを保存し、現在の全内容を置換することを確認した</label><label class="research-file-label">研究作業backup JSONを復元<input id="research-restore-file" type="file" accept=".json,application/json"></label></div>
+    <label class="check-label"><input id="research-end-confirm" type="checkbox">作業backupを保存した、または来歴を破棄して研究作業を終了することを確認した（店舗は保持）</label><button id="research-end" class="outline-button" type="button">研究作業を終了</button>
+  </dialog>
 </body>
 </html>
