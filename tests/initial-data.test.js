@@ -43,3 +43,10 @@ test('published JSON exactly matches the initial module and authorized bytes',as
  initial();const bytes=await readFile(new URL('../examples/initial-researched-v2.json',import.meta.url));assert.deepEqual(JSON.parse(bytes),api.initialNotebook);
  assert.equal(createHash('sha256').update(bytes).digest('hex'),'8fab88fc66b45e8d1cad3ccf6b7f0c07c925cb2294d9dc6c88d4fcaade02e332');
 });
+test('adding another initial URL does not replace the stable historical record',()=>{
+ const state=initial(),store=state.stores[1],expected=api.initialResearchFor(store);
+ const edited=applyManualDraft(state,{id:store.id,values:{urls:[...store.urls,...state.stores[0].urls]}}).nextState.stores[1];
+ assert.deepEqual(api.initialResearchFor(edited),expected);
+ const restored={...edited,id:'restored-random-id'};assert.equal(api.initialResearchFor(restored),null);
+ assert.deepEqual(api.initialResearchFor({...restored,urls:store.urls,name:'本人の別名'}),expected);
+});

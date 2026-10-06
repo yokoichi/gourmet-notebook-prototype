@@ -1213,8 +1213,10 @@ export function createInitialNotebook() {
  const state={fieldSettings,stores};serializeState(state);return state;
 }
 export function initialResearchFor(store) {
- const index=initialNotebook.restaurants.findIndex((record,i)=>store.id===`initial-researched-${i+1}`||record.urls.some(url=>store.urls.includes(url)));
- return index<0?null:initialResearch[index];
+ const stableIndex=initialNotebook.restaurants.findIndex((_,i)=>store.id===`initial-researched-${i+1}`);
+ if(stableIndex>=0)return initialResearch[stableIndex];
+ const matches=initialNotebook.restaurants.flatMap((record,i)=>record.urls.some(url=>store.urls.includes(url))?[i]:[]);
+ return matches.length===1?initialResearch[matches[0]]:null;
 }
 export function isInitialReplay(stores,incoming) {
  const index=initialNotebook.restaurants.findIndex(record=>JSON.stringify(restaurantValue(record))===JSON.stringify(restaurantValue(incoming)));
