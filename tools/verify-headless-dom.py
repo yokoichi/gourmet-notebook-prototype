@@ -37,6 +37,7 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 
 
 class HeadlessFlows(unittest.TestCase):
+    initial_count = 11
     @classmethod
     def setUpClass(cls):
         cls.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(QuietHandler, directory=str(ROOT)))
@@ -70,7 +71,7 @@ class HeadlessFlows(unittest.TestCase):
         self.page = self.context.new_page()
         self.page.on('pageerror', lambda error: self.errors.append(str(error)))
         self.page.goto(self.origin + '/')
-        expect(self.page.locator('.restaurant-card')).to_have_count(8)
+        expect(self.page.locator('.restaurant-card')).to_have_count(self.initial_count)
 
     def tearDown(self):
         self.context.close()
@@ -146,7 +147,7 @@ class HeadlessFlows(unittest.TestCase):
         apply.click()
         expect(self.page.locator('#research-status')).to_contain_text('補完しました')
         backup = self.backup()
-        self.assertEqual(len(backup['notebook']['restaurants']), 9)
+        self.assertEqual(len(backup['notebook']['restaurants']), self.initial_count + 1)
         record = backup['notebook']['restaurants'][-1]
         self.assertEqual(record['address'], '架空県合成市1')
         self.assertEqual(record['memo'], '合成の非共有メモ')
@@ -193,7 +194,7 @@ class HeadlessFlows(unittest.TestCase):
         self.result(exchange(retry))
         self.result(exchange(retry))
         saved = self.backup()
-        self.assertEqual(len(saved['notebook']['restaurants']), 9)
+        self.assertEqual(len(saved['notebook']['restaurants']), self.initial_count + 1)
         self.assertEqual(len(saved['applicationReceipts']), 2)
 
     def test_invalid_result_error_and_recovery_does_not_lose_original(self):
@@ -226,7 +227,7 @@ class HeadlessFlows(unittest.TestCase):
         expect(self.page.locator('#import-dialog')).not_to_be_visible()
         self.open_research()
         after = self.backup()
-        self.assertEqual(len(after['notebook']['restaurants']), 11)
+        self.assertEqual(len(after['notebook']['restaurants']), self.initial_count + 3)
         self.assertEqual(after['workspaceId'], saved['workspaceId'])
         self.assertEqual(after['applicationReceipts'], saved['applicationReceipts'])
 
@@ -246,7 +247,7 @@ class HeadlessFlows(unittest.TestCase):
         current = self.backup()
         record = next(r for r in current['notebook']['restaurants'] if r['name'] == '合成DOMカフェ')
         self.assertEqual(record['address'], '架空県合成市1')
-        self.assertEqual(len(current['notebook']['restaurants']), 10)
+        self.assertEqual(len(current['notebook']['restaurants']), self.initial_count + 2)
 
     def test_close_during_actual_file_read_ignores_late_result(self):
         transport = self.start(sequential=True)[0]

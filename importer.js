@@ -184,7 +184,7 @@ export function prepareImport(state,parsed,options) {
     if(!restore) state.stores.forEach(store=>remember(restaurantValue(store)));
     result.rows=parsed.rows.map(row=>{
       if(!row.record) return {...row,status:'invalid',warnings:[]};
-      const duplicate=!restore&&(row.record.address||row.record.urls.length)&&full.has(fingerprint(row.record));
+      const duplicate=!restore&&(row.record.address||row.record.urls.length)&&(full.has(fingerprint(row.record))||options.preserveRecord?.(row.record)===true);
       const warnings=!restore&&!duplicate&&identityKeys(row.record).some(key=>weak.has(key))?['URLまたは店名・住所が共通の候補です。上書きせず追加します。']:[];
       if(!duplicate||options.includeDuplicates) remember(row.record);
       return {...row,status:duplicate?'duplicate':'valid',warnings};

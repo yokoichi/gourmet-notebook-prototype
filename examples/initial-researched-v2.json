@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 2,
+  "format": "gourmet-notebook-prototype",
+  "fieldSettings": [
+    {
+      "id": "name",
+      "kind": "builtin",
+      "label": "店名",
+      "visible": true,
+      "required": true
+    },
+    {
+      "id": "genre",
+      "kind": "builtin",
+      "label": "ジャンル",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "phone",
+      "kind": "builtin",
+      "label": "電話",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "address",
+      "kind": "builtin",
+      "label": "住所",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "tags",
+      "kind": "builtin",
+      "label": "タグ",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "memo",
+      "kind": "builtin",
+      "label": "メモ",
+      "visible": true,
+      "required": false
+    },
+    {
+      "id": "urls",
+      "kind": "builtin",
+      "label": "URL",
+      "visible": true,
+      "required": false
+    }
+  ],
+  "restaurants": [
+    {
+      "name": "元祖 平壌冷麺 食道園",
+      "genre": "冷麺・焼肉",
+      "phone": "019-651-4590",
+      "address": "岩手県盛岡市大通1丁目8-2",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E5%85%83%E7%A5%96+%E5%B9%B3%E5%A3%8C%E5%86%B7%E9%BA%BA+%E9%A3%9F%E9%81%93%E5%9C%92/data=!4m2!3m1!1s0x5f8576254c3aa50b:0x7c6facf565e963f8"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "不来方じゃじゃめん",
+      "genre": "じゃじゃ麺",
+      "phone": "019-651-7575",
+      "address": "岩手県盛岡市大通3-1-23 クリエイトビル B1F",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E4%B8%8D%E6%9D%A5%E6%96%B9%E3%81%98%E3%82%83%E3%81%98%E3%82%83%E3%82%81%E3%82%93/data=!4m2!3m1!1s0x5f8576304067628b:0xb8053d480f9957d5"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "釜定",
+      "genre": "南部鉄器",
+      "phone": "019-622-3911",
+      "address": "岩手県盛岡市紺屋町2-5",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E9%87%9C%E5%AE%9A/data=!4m2!3m1!1s0x5f8576269a4d67e1:0x5df5e8a82446b94f"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "茣蓙九【森九商店】",
+      "genre": "",
+      "phone": "",
+      "address": "",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E8%8C%A3%E8%93%99%E4%B9%9D%E3%80%90%E6%A3%AE%E4%B9%9D%E5%95%86%E5%BA%97%E3%80%91/data=!4m2!3m1!1s0x5f8576269d89f94f:0x75fecbf840a91427"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "みな実古琲店",
+      "genre": "喫茶店",
+      "phone": "0178-47-4373",
+      "address": "青森県八戸市番町23-1",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E3%81%BF%E3%81%AA%E5%AE%9F%E5%8F%A4%E7%90%B2%E5%BA%97/data=!4m2!3m1!1s0x5f9b5384d9938e07:0x704167f0bb78c052"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "WHARF TANECHI(ワーフ タネチ)",
+      "genre": "ソフトクリーム・売店・BBQ",
+      "phone": "0178-38-8420",
+      "address": "青森県八戸市鮫町字棚久保14-112",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/WHARF+TANECHI(%E3%83%AF%E3%83%BC%E3%83%95+%E3%82%BF%E3%83%8D%E3%83%81)/data=!4m2!3m1!1s0x5f9b53f69b31320d:0xea659f3c5b23b446"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "奇跡の鳥居",
+      "genre": "",
+      "phone": "",
+      "address": "",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E5%A5%87%E8%B7%A1%E3%81%AE%E9%B3%A5%E5%B1%85/data=!4m2!3m1!1s0x5f84ad6622dafe0f:0xcc9c28b6eb5514a8"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "八戸グランドホテル",
+      "genre": "",
+      "phone": "",
+      "address": "",
+      "tags": [],
+      "memo": "2日間泊まる宿",
+      "urls": [
+        "https://www.google.com/maps/place/%E5%85%AB%E6%88%B8%E3%82%B0%E3%83%A9%E3%83%B3%E3%83%89%E3%83%9B%E3%83%86%E3%83%AB/data=!4m2!3m1!1s0x6000df9043f5435d:0x9bb01ec23eed0db6"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "元祖長浜屋台ラーメン一心亭 八戸分店",
+      "genre": "ラーメン",
+      "phone": "0178-22-6090",
+      "address": "青森県八戸市大字六日町33-1 ライオンビル八戸館 1F",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E5%85%83%E7%A5%96%E9%95%B7%E6%B5%9C%E5%B1%8B%E5%8F%B0%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%E4%B8%80%E5%BF%83%E4%BA%AD+%E5%85%AB%E6%88%B8%E5%88%86%E5%BA%97/data=!4m2!3m1!1s0x5f9b53f8afa8e6f5:0xa65b832879dfaafd"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "末廣ラーメン本舗 八戸長横町分店",
+      "genre": "ラーメン",
+      "phone": "",
+      "address": "青森県八戸市長横町4-10",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E6%9C%AB%E5%BB%A3%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%E6%9C%AC%E8%88%97+%E5%85%AB%E6%88%B8%E9%95%B7%E6%A8%AA%E7%94%BA%E5%88%86%E5%BA%97/data=!4m2!3m1!1s0x5f9b53004a9d0791:0xe89fb34426f5c519"
+      ],
+      "customValues": {}
+    },
+    {
+      "name": "南部民芸料理 蔵",
+      "genre": "郷土料理・海鮮・居酒屋",
+      "phone": "0178-22-1027",
+      "address": "青森県八戸市十三日町28 花真ビル 1F",
+      "tags": [],
+      "memo": "",
+      "urls": [
+        "https://www.google.com/maps/place/%E5%8D%97%E9%83%A8%E6%B0%91%E8%8A%B8%E6%96%99%E7%90%86+%E8%94%B5/data=!4m2!3m1!1s0x5f9b5357af2e2b01:0x89a71f017196e84e"
+      ],
+      "customValues": {}
+    }
+  ]
+}

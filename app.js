@@ -1,7 +1,7 @@
 import { decodeImportFile, parseImport, prepareImport, ticketsFor, MAX_BYTES } from './importer.js';
-import { defaultFieldSettings, resetFieldSettings, serializeState, applyManualDraft, applyFieldSettings, MAX_JSON_BYTES, MAX_CUSTOM_FIELDS } from './model.js';
+import { resetFieldSettings, serializeState, applyManualDraft, applyFieldSettings, MAX_JSON_BYTES, MAX_CUSTOM_FIELDS } from './model.js';
 import { renderManualFields, readManualValues, readManualIntent, renderSettingsFields } from './forms.js';
-import { samples } from './samples.js';
+import { createInitialNotebook, initialResearchFor, isInitialReplay } from './initial-data.js';
 import { createResearchController } from './research/controller.js';
 import { mountResearchUI } from './research/ui.js';
 
@@ -12,7 +12,7 @@ const element = (tag, className = '', text = '') => {
   node.textContent = text;
   return node;
 };
-let state = {fieldSettings:defaultFieldSettings(),stores:samples.map(({mapsURL,...store})=>({...store,tags:[...store.tags],urls:mapsURL?[mapsURL]:[],customValues:{}}))};
+let state = createInitialNotebook();
 let serialized = serializeState(state), stateRevision = 0;
 let filter = '', dirty = false, preview = null, parsed = null, fileGeneration = 0, previewRevision = -1;
 let manualId = null, settingsDraft = null, submitting = false;
@@ -56,6 +56,17 @@ function render() {
     bottom.append(element('span', '', 'a little favorite.'), edit);
     card.append(top, element('h3', '', store.name), element('p', 'card-address', store.address || '住所のメモはまだありません'), tags);
     if (store.memo) card.append(element('p', 'card-memo', store.memo));
+    const initialResearch=initialResearchFor(store);
+    if(initialResearch){
+      const details=element('details','initial-research');
+      details.append(element('summary','','初期調査記録 · '+initialResearch.confidence));
+      details.append(element('p','',`${initialResearch.name} / ${initialResearch.observedAt}の保存済み調査。現在値の再確認ではありません。`));
+      details.append(element('p','',initialResearch.currentStatus));
+      for(const [key,label] of [['address','住所'],['phone','電話'],['genre','ジャンル']])if(initialResearch.fieldEvidence[key].status==='unknown')details.append(element('p','',label+'：不明・初期値は空欄'));
+      initialResearch.notes.forEach(note=>details.append(element('p','',note)));
+      initialResearch.sources.forEach(source=>{const link=element('a','',source.title+'（'+source.observedAt+'）');link.href=source.url;link.target='_blank';link.rel='noopener noreferrer';details.append(element('p','','出典：'),link);});
+      card.append(details);
+    }
     card.append(bottom); fragment.append(card);
   });
   grid.replaceChildren(fragment);
@@ -144,7 +155,7 @@ function resetPreview() {
 }
 function importOptions() {
   const mode=$('#import-mode').value;
-  return {mode,applySettings:mode==='restore'||$('#apply-import-settings').checked,includeDuplicates:$('#include-duplicates').checked,createId:()=>crypto.randomUUID()};
+  return {mode,applySettings:mode==='restore'||$('#apply-import-settings').checked,includeDuplicates:$('#include-duplicates').checked,createId:()=>crypto.randomUUID(),preserveRecord:record=>isInitialReplay(state.stores,record)};
 }
 function updatePreview() {
   if(!parsed)return;

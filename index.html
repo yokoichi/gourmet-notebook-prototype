@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="行きたいお店をひとつの手帳に。合成サンプルで試すグルメ手帳の静的プロトタイプです。">
+  <meta name="description" content="行きたいお店をひとつの手帳に。公開承認済みの11施設を初期表示するグルメ手帳の静的プロトタイプです。">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
   <title>グルメ手帳 — prototype</title>
@@ -21,16 +21,16 @@
       <div class="intro-copy"><p class="eyebrow">YOUR NEXT GOOD MEAL</p><h1 id="intro-title">行きたいお店を、<br>ひとつの手帳に。</h1><p class="intro-description">気になった一軒も、集めてきたリストも。<br>好きな味から、次の寄り道を見つけよう。</p></div>
       <div class="intro-art" aria-hidden="true"><div class="art-caption">a place for<br>your favorites.</div><div class="plate"><span class="plate-center">おいしい<br>寄り道</span></div><div class="art-note"><span>CAFE / DINNER / LITTLE FINDS</span><span>collect a little, enjoy a lot.</span></div></div>
     </section>
-    <section class="prototype-notice" aria-label="試作の保存と通信"><span class="notice-dot" aria-hidden="true"></span><p><strong>この画面だけで試すプロトタイプです。</strong> サーバ保存・アカウント同期・AI API・購入は未実装。店舗と項目設定はブラウザ内だけで保持し、再読み込みで消えます。必要なら店舗＋設定JSONを書き出してください。</p></section>
+    <section class="prototype-notice" aria-label="試作の保存と通信"><span class="notice-dot" aria-hidden="true"></span><p><strong>初期11施設は全訪問者に共通です。</strong> 編集・追加・項目設定はこの画面内だけで保持し、再読み込みで初期11件に戻ります。必要なら店舗＋設定JSONを書き出してください。サーバ保存・アカウント同期・AI API・購入は未実装です。</p></section>
     <section class="add-section" aria-label="お店を追加">
       <button class="action-card import-action" id="import-button" type="button"><span class="action-symbol" aria-hidden="true">↥</span><span><span class="action-overline">おすすめ · CSV / JSON</span><strong>リストをまとめて取り込む</strong><span class="action-description">ファイルを選んで、登録前に確認</span></span><span class="action-arrow" aria-hidden="true">↗</span></button>
       <button class="action-card manual-action" id="add-button" type="button"><span class="action-symbol" aria-hidden="true">＋</span><span><span id="manual-overline" class="action-overline">店名だけでもOK</span><strong>一軒ずつメモする</strong><span class="action-description">気になるお店を手動で追加</span></span><span class="action-arrow" aria-hidden="true">↗</span></button>
     </section>
     <section class="notebook" aria-labelledby="notebook-title">
-      <div class="section-heading"><div><p class="eyebrow">MY COLLECTION</p><h2 id="notebook-title">お店の手帳 <span id="total-count" class="count-pill">8</span></h2></div><button id="export-button" class="outline-button" type="button">JSONを書き出す <span aria-hidden="true">↓</span></button></div>
+      <div class="section-heading"><div><p class="eyebrow">MY COLLECTION</p><h2 id="notebook-title">お店の手帳 <span id="total-count" class="count-pill">11</span></h2></div><button id="export-button" class="outline-button" type="button">JSONを書き出す <span aria-hidden="true">↓</span></button></div>
       <div class="collection-tools"><label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">店名・住所・メモ・タグを検索</span><input id="search" type="search" placeholder="店名、エリア、気になるタグで検索" maxlength="200" autocomplete="off"></label><label class="sort-control"><span>並び順</span><select id="sort"><option value="added">追加順</option><option value="name">店名順</option></select></label></div>
       <div id="filters" class="filters" aria-label="ジャンルで絞り込み"></div>
-      <div class="results-meta"><p id="result-count" tabindex="-1">8件のお店</p><span>初期データはすべて架空のお店です</span></div>
+      <div class="results-meta"><p id="result-count" tabindex="-1">11件のお店</p><span>公開承認済みの11施設 · 当日営業は未確認</span></div>
       <div id="restaurant-grid" class="restaurant-grid"></div>
       <div id="empty-state" class="empty-state" hidden><span aria-hidden="true">◌</span><h3>まだ、見つかっていない一軒。</h3><p>検索条件を変えるか、新しいお店を追加してみましょう。</p><button id="clear-search" class="outline-button" type="button">絞り込みを解除</button></div>
     </section>
@@ -71,7 +71,7 @@
       <label id="duplicates-label" class="check-label"><input id="include-duplicates" type="checkbox">完全一致の重複候補も追加する</label>
       <div id="restore-section" class="restore-section" hidden><p id="restore-description"></p><button id="export-before-restore" class="outline-button" type="button">現在のJSONを書き出す</button><label class="check-label"><input id="restore-confirm" type="checkbox" aria-describedby="restore-description">店舗と設定を置き換えることを確認した</label></div>
       <div id="preview-summary" class="preview-summary"></div><div id="column-mapping" class="column-mapping"></div>
-      <p class="preview-help">完全一致の重複候補は初期値スキップ。共有URL・同名住所は注意候補として追加可能です。既存店の上書きや原本の変更はしません。</p>
+      <p class="preview-help">完全一致の重複と初期11件の同じJSONの再読込は初期値スキップ。初期店舗の本人編集は保持します。その他の共有URL・同名住所は注意候補として追加可能です。既存店の上書きや原本の変更はしません。</p>
       <div id="preview-rows" class="preview-rows"></div><p id="preview-overflow" class="preview-help"></p><p id="import-details" class="preview-help import-details"></p>
     </div>
     <div class="dialog-actions"><button class="outline-button" type="button" data-close="import-dialog">キャンセル</button><button id="commit-import" class="primary-button" type="button" disabled>確認してこの画面に追加</button></div>
@@ -79,7 +79,7 @@
 
   <dialog id="classification-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">CLASSIFICATION EXAMPLE</p><h2>サンプル分類例</h2></div><button class="close-button" type="button" data-close="classification-dialog" aria-label="閉じる">×</button></div><p class="dialog-description">合成サンプルに用意した分類例です。取り込んだ店名やメモをAIへ送信・分類していません。</p><div class="classification-example"><span>ひだまり珈琲（サンプル）</span><strong>カフェ</strong><span class="tag">コーヒー</span><span class="tag">ひとり時間</span></div><label class="estimate-field">見積例の店舗数<input id="estimate-count" type="number" min="0" max="1000" step="1" value="100"></label><p id="estimate-result" class="estimate-result"></p><p class="preview-help">100店舗ごとに切り上げ。見積例だけで、予約・消費はありません。</p><div class="dialog-actions"><button class="primary-button" type="button" data-close="classification-dialog">手帳に戻る</button></div></dialog>
 
-  <dialog id="about-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">ABOUT THIS PROTOTYPE</p><h2>安心して試すために</h2></div><button class="close-button" type="button" data-close="about-dialog" aria-label="閉じる">×</button></div><div class="about-copy"><p>これは操作感を確かめる静的プロトタイプです。最初のお店はすべて合成サンプルです。</p><p>入力・取り込みはブラウザのメモリ内のみで扱い、ページを再読み込みすると消えます。店舗と項目設定はJSONを書き出して手元に保存してください。</p><p>選択ファイル・店名・メモは外部へ送信しません。ページ自体の取得通信は発生し、GitHub Pages側にはアクセスに関する記録が残る場合があります。</p><p>アカウント共通の店舗リスト・残高、ZIP対応、AI分類、チケット購入は今後の機能です。この試作にはログイン、同期、実API呼び出し、決済、分析タグがありません。</p><p>分析プロンプトはローカルで検討してからサービスへ反映します。このページからAIへ送信することはありません。</p></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="about-dialog">わかりました</button></div></dialog>
+  <dialog id="about-dialog" class="dialog"><div class="dialog-heading"><div><p class="eyebrow">ABOUT THIS PROTOTYPE</p><h2>安心して試すために</h2></div><button class="close-button" type="button" data-close="about-dialog" aria-label="閉じる">×</button></div><div class="about-copy"><p>これは操作感を確かめる静的プロトタイプです。最初の11施設は公開承認済みのCSVメモと保存済み調査結果です。3施設の同定と一部の電話は未確認で、推測では埋めていません。</p><p>入力・取り込みはブラウザのメモリ内のみで扱い、ページを再読み込みすると編集・追加は消え、初期11施設に戻ります。店舗と項目設定はJSONを書き出して手元に保存してください。初期調査記録はこのサイトに付属し、通常の店舗JSONには含めません。</p><p>選択ファイル・店名・メモは外部へ送信しません。ページ自体の取得通信は発生し、GitHub Pages側にはアクセスに関する記録が残る場合があります。</p><p>アカウント共通の店舗リスト・残高、ZIP対応、AI分類、チケット購入は今後の機能です。この試作にはログイン、同期、実API呼び出し、決済、分析タグがありません。</p><p>分析プロンプトはローカルで検討してからサービスへ反映します。このページからAIへ送信することはありません。</p></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="about-dialog">わかりました</button></div></dialog>
 
   <dialog id="research-dialog" class="dialog research-dialog" aria-labelledby="research-title">
     <div class="dialog-heading"><h2 id="research-title">CSV原本と行別調査結果</h2><button class="close-button" type="button" data-close="research-dialog" aria-label="閉じる">×</button></div>
